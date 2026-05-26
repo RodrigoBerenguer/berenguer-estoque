@@ -1957,24 +1957,28 @@ function salvarMat(){
     var emCampoNow=emCampo(itemId);
     var dispNow=Math.max(0,totalInv-emCampoNow-totalPerdido(itemId));
     if(qty>dispNow){toast('Apenas '+dispNow+' unidades disponíveis','error');return;}
-    // criar entrada nova sempre (sem tentar reusar existente com carregamentoId)
-    var pendente=ev.materiais.find(function(m){return m.itemId===itemId&&!m.carregamentoId;});
-    if(pendente){
-      pendente.qtdSaida=(pendente.qtdSaida||0)+qty;
-    } else if(matIdx!==null){
+    // Edição: substituir direto. Adição nova: somar ao pendente ou criar.
+    if(matIdx!==null){
+      // EDIÇÃO — substituir a quantidade (não somar)
       ev.materiais[matIdx].qtdSaida=qty;
     } else {
-      ev.materiais.push({
-        itemId:itemId,
-        nome:catInsumo?catInsumo.nome:itemId,
-        qtdSaida:qty,
-        patsaida:[],
-        patRetorno:[],
-        qtdRetorno:0
-      });
+      // ADIÇÃO NOVA — somar ao pendente existente (excluindo o que está sendo editado)
+      var pendente=ev.materiais.find(function(m){return m.itemId===itemId&&!m.carregamentoId;});
+      if(pendente){
+        pendente.qtdSaida=(pendente.qtdSaida||0)+qty;
+      } else {
+        ev.materiais.push({
+          itemId:itemId,
+          nome:catInsumo?catInsumo.nome:itemId,
+          qtdSaida:qty,
+          patsaida:[],
+          patRetorno:[],
+          qtdRetorno:0
+        });
+      }
     }
     salvar();fechar('ov-mat');renderDet();
-    toast(qty+' unidade(s) adicionada(s)! ✅');
+    toast(qty+' unidade(s) '+(matIdx!==null?'atualizada(s)':'adicionada(s)')+'! ✅');
     return;
   }
   // ── VALIDAÇÃO DE ESTOQUE ─────────────────────────────────
