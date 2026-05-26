@@ -1193,8 +1193,9 @@ function renderDet(){
       });
     }
 
-    // botão finalizar carregamento
-    if(ev.status!=='concluido'&&matsNovos.length){
+    // botão finalizar carregamento — aparece se há pendentes (patrimônio OU insumos)
+    var insPend=ev.materiais.filter(function(m){return !m.carregamentoId&&isInsumoMat(m);});
+    if(ev.status!=='concluido'&&(matsNovos.length||insPend.length)){
       h+='<div class="divider"></div>';
       if(isAdmin()) h+='<button class="btn btn-secondary" onclick="finalizarCarregamento()" style="border-color:rgba(46,204,138,.3);color:var(--green)">🚛 FINALIZAR CARREGAMENTO</button>';
     }
@@ -5190,8 +5191,9 @@ function registrarRetornoInsumo(el){
 function finalizarCarregamento(){
   if(!isAdmin()){toast('Apenas admin pode finalizar carregamento','error');return;}
   var ev=EVS.find(function(e){return e.id===evAtual;});
-  var matsNovos=ev.materiais.filter(function(m){return !m.carregamentoId&&!isInsumoMat(m);});
-  if(!matsNovos.length){toast('Adicione materiais antes de finalizar','error');return;}
+  // Inclui TODOS os pendentes: patrimônio E insumos/EPI/Aterramento
+  var matsNovos=ev.materiais.filter(function(m){return !m.carregamentoId;});
+  if(!matsNovos.length){toast('Adicione materiais ou insumos antes de finalizar','error');return;}
   // verificar estoque e conflito de patrimônios
   var erros=[];
   var patConflitos=[];
