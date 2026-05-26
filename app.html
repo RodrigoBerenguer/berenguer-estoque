@@ -1755,12 +1755,15 @@ function abrirAddInsumo(){
 
 function filtrarMatInsumos(){
   var q=(document.getElementById('mat-busca').value||'').toLowerCase();
-  var items=CAT.filter(function(c){return isInsumo(c.id)&&(!q||c.nome.toLowerCase().indexOf(q)>=0);}).sort(function(a,b){return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});});
+  var items=CAT.filter(function(c){return isInsumo(c.id)&&(!q||c.nome.toLowerCase().indexOf(q)>=0);});
   var lista=document.getElementById('mat-lista');
   if(!items.length){lista.innerHTML='<div style="padding:12px 14px;font-size:12px;color:var(--text3)">Nenhum insumo encontrado</div>';return;}
-  lista.innerHTML=items.map(function(c){
-    return '<div class="mat-lista-item" onclick="selecionarMat(\''+c.id+'\',\''+c.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'+
-      '<div class="nome">'+c.nome+'</div><div class="cat">'+c.cat+'</div></div>';
+  var gG={};var oG=[];
+  items.forEach(function(c){if(!gG[c.cat]){gG[c.cat]=[];oG.push(c.cat);}gG[c.cat].push(c);});
+  oG.forEach(function(cat){gG[cat].sort(function(a,b){return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});});});
+  lista.innerHTML=oG.map(function(cat){
+    return '<div style="padding:4px 14px 2px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:Rajdhani,sans-serif;font-weight:700;background:var(--bg)">'+cat+'</div>'+
+      gG[cat].map(function(c){return '<div class="mat-lista-item" onclick="selecionarMat(\''+c.id+'\',\''+c.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"><div class="nome">'+c.nome+'</div></div>';}).join('');
   }).join('');
 }
 
@@ -1775,11 +1778,15 @@ function filtrarMat(){
   var items=CAT.filter(function(c){
     if(isInsumo(c.id)) return false;
     return !q||c.nome.toLowerCase().indexOf(q)>=0||c.cat.toLowerCase().indexOf(q)>=0;
-  }).sort(function(a,b){return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});});
+  });
   var lista=document.getElementById('mat-lista');
   if(!items.length){lista.innerHTML='<div style="padding:12px 14px;font-size:12px;color:var(--text3)">Nenhum item encontrado</div>';return;}
-  lista.innerHTML=items.map(function(c){
-    return '<div class="mat-lista-item" onclick="selecionarMat(\''+c.id+'\',\''+c.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'+'<div class="nome">'+c.nome+'</div><div class="cat">'+c.cat+'</div></div>';
+  var gG={};var oG=[];
+  items.forEach(function(c){if(!gG[c.cat]){gG[c.cat]=[];oG.push(c.cat);}gG[c.cat].push(c);});
+  oG.forEach(function(cat){gG[cat].sort(function(a,b){return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});});});
+  lista.innerHTML=oG.map(function(cat){
+    return '<div style="padding:4px 14px 2px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:Rajdhani,sans-serif;font-weight:700;background:var(--bg)">'+cat+'</div>'+
+      oG&&gG[cat].map(function(c){return '<div class="mat-lista-item" onclick="selecionarMat(\''+c.id+'\',\''+c.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"><div class="nome">'+c.nome+'</div></div>';}).join('');
   }).join('');
 }
 function selecionarMat(id,nome,disp){
@@ -2273,16 +2280,15 @@ function filtrarSolicMat(){
   var items=CAT.filter(function(c){
     if(isInsumo(c.id)) return false;
     return !q||c.nome.toLowerCase().indexOf(q)>=0||c.cat.toLowerCase().indexOf(q)>=0;
-  }).sort(function(a,b){return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});});
+  });
   var lista=document.getElementById('solic-mat-lista');
   if(!items.length){lista.innerHTML='<div style="padding:12px 14px;font-size:12px;color:var(--text3)">Nenhum item encontrado</div>';return;}
-  lista.innerHTML=items.map(function(c){
-    var ex=solicItensTemp.find(function(x){return x.itemId===c.id;});
-    var qty=ex?ex.qty:0;
-    return '<div class="mat-lista-item" style="display:flex;align-items:center;justify-content:space-between" onclick="addSolicItem(\''+c.id+'\',\''+c.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'+
-      '<div><div class="nome">'+c.nome+'</div><div class="cat">'+c.cat+'</div></div>'+
-      (qty>0?'<span style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;color:var(--accent);flex-shrink:0;margin-left:8px">'+qty+'×</span>':'')+
-    '</div>';
+  var gG={};var oG=[];
+  items.forEach(function(c){if(!gG[c.cat]){gG[c.cat]=[];oG.push(c.cat);}gG[c.cat].push(c);});
+  oG.forEach(function(cat){gG[cat].sort(function(a,b){return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});});});
+  lista.innerHTML=oG.map(function(cat){
+    return '<div style="padding:4px 14px 2px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:Rajdhani,sans-serif;font-weight:700;background:var(--bg)">'+cat+'</div>'+
+      gG[cat].map(function(c){var ex=solicItensTemp.find(function(x){return x.itemId===c.id;});var qty=ex?ex.qty:0;return '<div class="mat-lista-item" style="display:flex;align-items:center;justify-content:space-between" onclick="addSolicItem(\''+c.id+'\',\''+c.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"><div class="nome">'+c.nome+'</div>'+(qty>0?'<span style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;color:var(--accent);flex-shrink:0;margin-left:8px">'+qty+'×</span>':'')+'</div>';}).join('');
   }).join('');
 }
 
