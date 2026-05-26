@@ -1158,7 +1158,7 @@ function renderDet(){
       '<button onclick="abrirListaSolicEvento(\''+evAtual+'\')" style="background:rgba(179,136,255,.15);border:1px solid rgba(179,136,255,.3);color:var(--purple);font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer">VER</button>'+
     '</div>':'');
   document.getElementById('d-tabs').innerHTML=['saida','conferencia','resumo','transferir','insumos','areas'].map(function(t,i){
-    return '<div class="filter-chip '+(abaAtual===t?'active':'')+'" onclick="setAba(\''+t+'\')">'+['📤 Saída','📥 Retorno','📊 Resumo','🔄 Transferir','📦 Insumos','📍 Áreas'][i]+'</div>';
+    return '<div class="filter-chip '+(abaAtual===t?'active':'')+'" onclick="setAba(\''+t+'\')">'+['📤 Saída','📥 Retorno','📊 Resumo','🔄 Transferir','📦 Insumos / EPI / Aterramento','📍 Áreas'][i]+'</div>';
   }).join('');
   var c=document.getElementById('d-content');
   if(abaAtual==='saida'){
@@ -1573,7 +1573,7 @@ function renderDet(){
     var insCarg=insumosEvAll.filter(function(m){return m.carregamentoId;});
 
     if(ev.status!=='concluido'&&isAdmin()){
-      h+='<button class="btn btn-primary" onclick="abrirAddInsumo()" style="margin-bottom:16px">+ Adicionar Insumo / EPI</button>';
+      h+='<button class="btn btn-primary" onclick="abrirAddInsumo()" style="margin-bottom:16px">+ Adicionar Insumo / EPI / Aterramento</button>';
     }
 
     if(insPend.length){
@@ -1737,7 +1737,7 @@ function abrirAddInsumo(){
   if(!isAdmin()){toast('Apenas admin pode adicionar insumos','error');return;}
   matIdx=null;
   var ev=EVS.find(function(e){return e.id===evAtual;});
-  document.getElementById('mat-titulo').textContent='Adicionar Insumo';
+  document.getElementById('mat-titulo').textContent='Adicionar Insumo / EPI / Aterramento';
   document.getElementById('mat-sub').textContent=ev.nome;
   document.getElementById('mat-qty').value='';
   document.getElementById('mat-pats').value='';
