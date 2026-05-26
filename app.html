@@ -1181,13 +1181,26 @@ function renderDet(){
         if(mat.carregamentoId) return;
         var qtd=isInsumo(mat.itemId)?(mat.qtdSaida||0):(mat.patsaida&&mat.patsaida.length?mat.patsaida.length:(mat.qtdSaida||0));
         var tags=mat.patsaida?mat.patsaida.map(function(p){return '<span class="pat-tag saiu">'+p+'</span>';}).join(''):'';
+        var acoes='';
+        if(ev.status!=='concluido'){
+          if(isInsumo(mat.itemId)){
+            // Insumos: +/- direto no card, sem abrir modal
+            acoes='<div style="display:flex;align-items:center;gap:6px">'+
+              '<button onclick="ajustarQtdInsumo('+idx+',-1)" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-weight:700;line-height:1">−</button>'+
+              '<button onclick="ajustarQtdInsumo('+idx+',1)" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(240,192,64,.4);background:rgba(240,192,64,.1);color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-weight:700;line-height:1">+</button>'+
+              '<span style="color:var(--text3);font-size:22px;cursor:pointer;line-height:1;margin-left:4px" onclick="remMat('+idx+')">×</span>'+
+            '</div>';
+          } else {
+            // Patrimônio: editar e remover como antes
+            acoes='<div style="display:flex;gap:10px;align-items:center">'+
+              '<span style="color:var(--accent);font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;cursor:pointer" onclick="abrirEditMat('+idx+')">EDITAR</span>'+
+              '<span style="color:var(--text3);font-size:22px;cursor:pointer;line-height:1" onclick="remMat('+idx+')">×</span>'+
+            '</div>';
+          }
+        }
         h+='<div class="material-item">'+
-          '<div class="material-top"><div class="material-name">'+mat.nome+'</div>'+
-          (ev.status!=='concluido'?'<div style="display:flex;gap:10px;align-items:center">'+
-            '<span style="color:var(--accent);font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;cursor:pointer" onclick="abrirEditMat('+idx+')">EDITAR</span>'+
-            '<span style="color:var(--text3);font-size:22px;cursor:pointer;line-height:1" onclick="remMat('+idx+')">×</span>'+
-          '</div>':'')+
-          '</div><div class="qty-row"><span class="qty-label">Saída:</span><span class="qty-value">'+qtd+'</span></div>'+
+          '<div class="material-top"><div class="material-name">'+mat.nome+'</div>'+acoes+'</div>'+
+          '<div class="qty-row"><span class="qty-label">Saída:</span><span class="qty-value">'+qtd+'</span></div>'+
           (tags?'<div class="pat-tags">'+tags+'</div>':'')+
         '</div>';
       });
@@ -2071,6 +2084,23 @@ function remMat(idx){
   if(!isAdmin()){toast('Apenas admin pode remover material','error');return;}
   var ev=EVS.find(function(e){return e.id===evAtual;});
   ev.materiais.splice(idx,1);salvar();renderDet();
+}
+
+function ajustarQtdInsumo(idx, delta){
+  if(!isAdmin()){toast('Apenas admin pode editar','error');return;}
+  var ev=EVS.find(function(e){return e.id===evAtual;});
+  var mat=ev.materiais[idx];
+  if(!mat||mat.carregamentoId) return; // só pendentes
+  var novaQty=Math.max(0,(mat.qtdSaida||0)+delta);
+  if(novaQty===0){
+    // Remove se chegar a zero
+    ev.materiais.splice(idx,1);
+    toast('Item removido');
+  } else {
+    mat.qtdSaida=novaQty;
+    toast((delta>0?'+1':'-1')+' — '+mat.nome+': '+novaQty+' un');
+  }
+  salvar();renderDet();
 }
 
 // ── CONFERÊNCIA ──────────────────────────────────────────────
