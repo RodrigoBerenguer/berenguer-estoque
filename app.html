@@ -1755,7 +1755,7 @@ function abrirAddInsumo(){
 
 function filtrarMatInsumos(){
   var q=(document.getElementById('mat-busca').value||'').toLowerCase();
-  var items=CAT.filter(function(c){return isInsumo(c.id)&&(!q||c.nome.toLowerCase().indexOf(q)>=0);});
+  var items=CAT.filter(function(c){return isInsumo(c.id)&&(!q||c.nome.toLowerCase().indexOf(q)>=0);}).sort(function(a,b){return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});});
   var lista=document.getElementById('mat-lista');
   if(!items.length){lista.innerHTML='<div style="padding:12px 14px;font-size:12px;color:var(--text3)">Nenhum insumo encontrado</div>';return;}
   lista.innerHTML=items.map(function(c){
@@ -1775,7 +1775,7 @@ function filtrarMat(){
   var items=CAT.filter(function(c){
     if(isInsumo(c.id)) return false;
     return !q||c.nome.toLowerCase().indexOf(q)>=0||c.cat.toLowerCase().indexOf(q)>=0;
-  });
+  }).sort(function(a,b){return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});});
   var lista=document.getElementById('mat-lista');
   if(!items.length){lista.innerHTML='<div style="padding:12px 14px;font-size:12px;color:var(--text3)">Nenhum item encontrado</div>';return;}
   lista.innerHTML=items.map(function(c){
@@ -2273,7 +2273,7 @@ function filtrarSolicMat(){
   var items=CAT.filter(function(c){
     if(isInsumo(c.id)) return false;
     return !q||c.nome.toLowerCase().indexOf(q)>=0||c.cat.toLowerCase().indexOf(q)>=0;
-  });
+  }).sort(function(a,b){return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});});
   var lista=document.getElementById('solic-mat-lista');
   if(!items.length){lista.innerHTML='<div style="padding:12px 14px;font-size:12px;color:var(--text3)">Nenhum item encontrado</div>';return;}
   lista.innerHTML=items.map(function(c){
@@ -2299,6 +2299,8 @@ function filtrarSolicIns(){
     if(!grupos[c.cat]){grupos[c.cat]=[];ordem.push(c.cat);}
     grupos[c.cat].push(c);
   });
+  // Ordenar itens dentro de cada grupo
+  ordem.forEach(function(cat){grupos[cat].sort(function(a,b){return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});});});
   lista.innerHTML=ordem.map(function(cat){
     return '<div>'+
       '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:6px 14px 2px;font-family:Rajdhani,sans-serif;font-weight:700">'+cat+'</div>'+
