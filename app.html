@@ -4337,7 +4337,7 @@ function abrirAlocarArea(ai){
   var ev = EVS.find(function(e){ return e.id===evAtual; });
   var area = ev.areas[ai];
   document.getElementById('alocar-titulo').textContent = 'Alocar em: '+area.nome;
-  document.getElementById('alocar-sub').textContent = 'Selecione o material e os patrimônios disponíveis no evento mestre';
+  document.getElementById('alocar-sub').textContent = 'Selecione o material para alocar nesta área';
   document.getElementById('alocar-pats-area').innerHTML = '';
 
   // listar materiais disponíveis no mestre (não alocados nesta área)
@@ -4388,6 +4388,35 @@ function renderAlocarPats(){
   if(isNaN(mi)||mi<0){ area2.innerHTML=''; return; }
   var mat = ev.materiais[mi];
 
+  // ── INSUMOS: mostrar input de quantidade ──────────────────
+  if(isInsumo(mat.itemId)){
+    var qs=mat.qtdSaida||0;
+    if(qs===0){(ev.carregamentos||[]).forEach(function(cg){(cg.materiais||[]).forEach(function(cm){if(cm.nome===mat.nome&&cg.id===mat.carregamentoId)qs+=Number(cm.qtd||0);});});}
+    var jaAlocQty=0;
+    ev.areas.forEach(function(ar,ari){
+      (ar.materiais||[]).forEach(function(am){
+        if(am.itemId===mat.itemId) jaAlocQty+=(am.qtdSaida||0);
+      });
+    });
+    var dispQty=Math.max(0,qs-jaAlocQty);
+    var h='<div class="form-group">'+
+      '<label class="form-label">Quantidade a Alocar</label>'+
+      '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">'+
+        '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px">'+
+          '<span style="font-size:12px;color:var(--text2)">Disponível no mestre: <strong style="color:var(--text);font-family:Rajdhani,sans-serif;font-size:15px">'+dispQty+'</strong> un</span>'+
+        '</div>'+
+        '<div style="display:flex;align-items:center;gap:10px">'+
+          '<input type="number" id="alocar-insumo-qty" min="1" max="'+dispQty+'" value="1" '+
+            'style="width:80px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:Rajdhani,sans-serif;font-weight:700;font-size:18px;text-align:center;outline:none">'+
+          '<span style="font-size:13px;color:var(--text2)">unidades</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+    area2.innerHTML=h;
+    return;
+  }
+
+  // ── PATRIMÔNIO: mostrar checkboxes ────────────────────────
   var jaAlocados = [];
   ev.areas.forEach(function(ar, ari){
     if(ari===areaAtual) return;
