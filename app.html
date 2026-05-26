@@ -1173,9 +1173,11 @@ function renderDet(){
     }
 
     // lista de materiais pendentes (aguardando finalizar carregamento)
-    if(!matsNovos.length&&ev.status!=='concluido'){
+    // inclui insumos pendentes para mostrar os botões +/-
+    var todosPend=ev.materiais.filter(function(m){return !m.carregamentoId;});
+    if(!todosPend.length&&ev.status!=='concluido'){
       h+='<div class="empty"><div class="empty-icon">📦</div><div>Adicione materiais para o próximo carregamento</div></div>';
-    } else if(matsNovos.length){
+    } else if(todosPend.length){
       h+='<div style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Aguardando Carregamento</div>';
       ev.materiais.forEach(function(mat,idx){
         if(mat.carregamentoId) return;
