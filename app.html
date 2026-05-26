@@ -1575,7 +1575,7 @@ function renderDet(){
         h+='</div>';
       });
       if(ev.status!=='concluido'&&isAdmin()){
-        h+='<button onclick="finalizarCarregamento()" class="btn" style="width:100%;margin:8px 0 16px;background:rgba(232,184,75,.1);border:1px solid rgba(232,184,75,.3);color:var(--gold)">🚛 Finalizar Carregamento com Insumos</button>';
+        h+='<button onclick="finalizarCarregamentoInsumos()" class="btn" style="width:100%;margin:8px 0 16px;background:rgba(232,184,75,.1);border:1px solid rgba(232,184,75,.3);color:var(--gold)">🚛 Finalizar Carregamento com Insumos</button>';
       }
     }
 
@@ -5191,9 +5191,9 @@ function registrarRetornoInsumo(el){
 function finalizarCarregamento(){
   if(!isAdmin()){toast('Apenas admin pode finalizar carregamento','error');return;}
   var ev=EVS.find(function(e){return e.id===evAtual;});
-  // Inclui TODOS os pendentes: patrimônio E insumos/EPI/Aterramento
-  var matsNovos=ev.materiais.filter(function(m){return !m.carregamentoId;});
-  if(!matsNovos.length){toast('Adicione materiais ou insumos antes de finalizar','error');return;}
+  // Só patrimônio — insumos têm botão próprio na aba Insumos
+  var matsNovos=ev.materiais.filter(function(m){return !m.carregamentoId&&!isInsumoMat(m);});
+  if(!matsNovos.length){toast('Adicione materiais antes de finalizar','error');return;}
   // verificar estoque e conflito de patrimônios
   var erros=[];
   var patConflitos=[];
@@ -5231,6 +5231,38 @@ function finalizarCarregamento(){
   });
   salvar();renderDet();
   toast('Carregamento '+(ev.carregamentos.length)+'º registrado! 🚛');
+}
+
+// ── FINALIZAR CARREGAMENTO SÓ DE INSUMOS ─────────────────────
+function finalizarCarregamentoInsumos(){
+  if(!isAdmin()){toast('Apenas admin pode finalizar carregamento','error');return;}
+  var ev=EVS.find(function(e){return e.id===evAtual;});
+  // Só insumos/EPI/Aterramento pendentes (sem carregamentoId)
+  var insNovos=ev.materiais.filter(function(m){return !m.carregamentoId&&isInsumoMat(m);});
+  if(!insNovos.length){toast('Nenhum insumo aguardando carregamento','error');return;}
+  if(!ev.carregamentos) ev.carregamentos=[];
+  var cgId='cg'+Date.now();
+  // Snapshot só dos insumos
+  var snapshot=insNovos.map(function(m){
+    return {nome:m.nome,qtd:m.qtdSaida||0,pats:[]};
+  });
+  var total=snapshot.reduce(function(s,sn){return s+sn.qtd;},0);
+  ev.carregamentos.push({
+    id:cgId,
+    data:new Date().toISOString(),
+    total:total,
+    nItens:insNovos.length,
+    materiais:snapshot
+  });
+  // Marcar só os insumos com o carregamentoId
+  insNovos.forEach(function(m){m.carregamentoId=cgId;});
+  // Garantir qtdSaida correto via snapshot
+  snapshot.forEach(function(sn){
+    var mat=ev.materiais.find(function(m){return m.nome===sn.nome&&m.carregamentoId===cgId;});
+    if(mat&&isInsumo(mat.itemId)&&(!mat.qtdSaida||mat.qtdSaida===0)) mat.qtdSaida=sn.qtd;
+  });
+  salvar();renderDet();
+  toast(total+' insumo(s) — Carregamento '+ev.carregamentos.length+'º registrado! 🚛');
 }
 
 // ── SYNC HELPER ──────────────────────────────────────────────
