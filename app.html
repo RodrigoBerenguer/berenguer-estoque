@@ -2514,7 +2514,7 @@ function renderEstoque(){
   });
   // Ordenar itens de cada grupo alfabeticamente
   ordemCats.forEach(function(cat){
-    grupos[cat].sort(function(a,b){return a.nome.localeCompare(b.nome,'pt');});
+    grupos[cat].sort(function(a,b){return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});});
   });
 
   list.innerHTML=ordemCats.map(function(cat){
@@ -2761,7 +2761,7 @@ function renderCat(){
   items.forEach(function(i){if(!grupos[i.cat])grupos[i.cat]=[];grupos[i.cat].push(i);});
   // Ordenar itens de cada grupo alfabeticamente
   Object.keys(grupos).forEach(function(cat){
-    grupos[cat].sort(function(a,b){return a.nome.localeCompare(b.nome,'pt');});
+    grupos[cat].sort(function(a,b){return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});});
   });
   list.innerHTML=Object.keys(grupos).map(function(cat){
     var catEsc=cat.replace(/'/g,"\\'");
