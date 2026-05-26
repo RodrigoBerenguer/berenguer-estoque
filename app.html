@@ -609,16 +609,30 @@
     <div class="form-group"><label class="form-label">Local</label><input class="form-input" id="solic-local" placeholder="Ex: Buffet Recanto Verde"></div>
     <div class="form-group"><label class="form-label">Data pra Entrega</label><input class="form-input" type="date" id="solic-data"></div>
     <div class="divider"></div>
-    <div class="form-label" style="margin-bottom:8px">Materiais Solicitados</div>
+    <div class="form-label" style="margin-bottom:8px">Itens Solicitados</div>
     <!-- itens selecionados -->
-    <div id="solic-itens-lista" style="margin-bottom:10px"></div>
-    <!-- lista completa de estoque -->
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px">
-      <div class="swrap" style="margin-bottom:8px">
-        <span class="sicon">🔍</span>
-        <input class="mat-busca-input" id="solic-busca" placeholder="Buscar material..." oninput="filtrarSolicMat()">
+    <div id="solic-itens-lista" style="margin-bottom:12px"></div>
+    <!-- MATERIAIS COM PATRIMÔNIO -->
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);margin-bottom:6px;font-weight:600">📦 Materiais</div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px">
+        <div class="swrap" style="margin-bottom:8px">
+          <span class="sicon">🔍</span>
+          <input class="mat-busca-input" id="solic-busca" placeholder="Buscar material..." oninput="filtrarSolicMat()">
+        </div>
+        <div id="solic-mat-lista" style="max-height:200px;overflow-y:auto"></div>
       </div>
-      <div id="solic-mat-lista" style="max-height:260px;overflow-y:auto"></div>
+    </div>
+    <!-- INSUMOS / EPI / ATERRAMENTO -->
+    <div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);margin-bottom:6px;font-weight:600">🔧 Insumos / EPI / Aterramento</div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px">
+        <div class="swrap" style="margin-bottom:8px">
+          <span class="sicon">🔍</span>
+          <input class="mat-busca-input" id="solic-busca-ins" placeholder="Buscar insumo..." oninput="filtrarSolicIns()">
+        </div>
+        <div id="solic-ins-lista" style="max-height:200px;overflow-y:auto"></div>
+      </div>
     </div>
     <div class="row2" style="margin-top:8px">
       <button class="btn btn-ghost" onclick="fechar('ov-solic')">Cancelar</button>
@@ -2147,7 +2161,10 @@ function abrirNovaSolic(){
   solicItensTemp=[];
   renderSolicItensTemp();
   abrir('ov-solic');
-  setTimeout(function(){filtrarSolicMat();},100);
+  setTimeout(function(){
+    filtrarSolicMat();
+    filtrarSolicIns();
+  },100);
 }
 
 function renderSolicItensTemp(){
@@ -2216,12 +2233,68 @@ function solicQtyDireto(itemId, delta, nome){
 
 function filtrarSolicMat(){
   var q=(document.getElementById('solic-busca').value||'').toLowerCase();
-  var items=CAT.filter(function(c){return !q||c.nome.toLowerCase().indexOf(q)>=0||c.cat.toLowerCase().indexOf(q)>=0;});
+  var items=CAT.filter(function(c){
+    if(isInsumo(c.id)) return false;
+    return !q||c.nome.toLowerCase().indexOf(q)>=0||c.cat.toLowerCase().indexOf(q)>=0;
+  });
   var lista=document.getElementById('solic-mat-lista');
   if(!items.length){lista.innerHTML='<div style="padding:12px 14px;font-size:12px;color:var(--text3)">Nenhum item encontrado</div>';return;}
   lista.innerHTML=items.map(function(c){
-    return '<div class="mat-lista-item" onclick="addSolicItem(\''+c.id+'\',\''+c.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"><div class="nome">'+c.nome+'</div><div class="cat">'+c.cat+'</div></div>';
+    var ex=solicItensTemp.find(function(x){return x.itemId===c.id;});
+    var qty=ex?ex.qty:0;
+    return '<div class="mat-lista-item" style="display:flex;align-items:center;justify-content:space-between" onclick="addSolicItem(\''+c.id+'\',\''+c.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'+
+      '<div><div class="nome">'+c.nome+'</div><div class="cat">'+c.cat+'</div></div>'+
+      (qty>0?'<span style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;color:var(--accent);flex-shrink:0;margin-left:8px">'+qty+'×</span>':'')+
+    '</div>';
   }).join('');
+}
+
+function filtrarSolicIns(){
+  var q=(document.getElementById('solic-busca-ins').value||'').toLowerCase();
+  var items=CAT.filter(function(c){
+    if(!isInsumo(c.id)) return false;
+    return !q||c.nome.toLowerCase().indexOf(q)>=0||c.cat.toLowerCase().indexOf(q)>=0;
+  });
+  var lista=document.getElementById('solic-ins-lista');
+  if(!items.length){lista.innerHTML='<div style="padding:12px 14px;font-size:12px;color:var(--text3)">Nenhum insumo encontrado</div>';return;}
+  var grupos={};var ordem=[];
+  items.forEach(function(c){
+    if(!grupos[c.cat]){grupos[c.cat]=[];ordem.push(c.cat);}
+    grupos[c.cat].push(c);
+  });
+  lista.innerHTML=ordem.map(function(cat){
+    return '<div>'+
+      '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:6px 14px 2px;font-family:Rajdhani,sans-serif;font-weight:700">'+cat+'</div>'+
+      grupos[cat].map(function(c){
+        var ex=solicItensTemp.find(function(x){return x.itemId===c.id;});
+        var qty=ex?ex.qty:0;
+        var cId=c.id; var cNome=c.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return '<div class="mat-lista-item" style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px">'+
+          '<div style="flex:1;font-size:13px;font-weight:500">'+c.nome+'</div>'+
+          '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'+
+            (qty>0?'<button onclick="addSolicInsItem(\''+cId+'\',\''+cNome+'\',-1)" style="width:24px;height:24px;border-radius:5px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-weight:700;line-height:1">−</button>':'')+
+            (qty>0?'<span style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:15px;color:var(--accent);min-width:22px;text-align:center">'+qty+'</span>':'')+
+            '<button onclick="addSolicInsItem(\''+cId+'\',\''+cNome+'\',1)" style="width:24px;height:24px;border-radius:5px;border:1px solid rgba(240,192,64,.4);background:rgba(240,192,64,.1);color:var(--accent);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-weight:700;line-height:1">+</button>'+
+          '</div>'+
+        '</div>';
+      }).join('')+
+    '</div>';
+  }).join('');
+}
+
+function addSolicInsItem(id, nome, delta){
+  var ex=solicItensTemp.find(function(x){return x.itemId===id;});
+  if(delta>0){
+    if(ex){ex.qty++;}
+    else{solicItensTemp.push({itemId:id,nome:nome,qty:1,isInsumo:true});}
+    toast(nome+' adicionado! 🔧');
+  } else {
+    if(!ex) return;
+    ex.qty=Math.max(0,ex.qty-1);
+    if(ex.qty<=0) solicItensTemp=solicItensTemp.filter(function(x){return x.itemId!==id;});
+  }
+  renderSolicItensTemp();
+  filtrarSolicIns();
 }
 
 function addSolicItem(id,nome){
