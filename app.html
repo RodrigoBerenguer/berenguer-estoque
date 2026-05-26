@@ -5063,7 +5063,7 @@ function isInsumo(itemId){
   var it=CAT.find(function(c){return c.id===itemId;});
   if(!it||!it.cat) return false;
   var cat=it.cat.toLowerCase();
-  return cat==='insumos'||cat==='epi';
+  return cat==='insumos'||cat==='epi'||cat==='aterramento';
 }
 function isInsumoMat(mat){
   // Detecta insumo/EPI pelo itemId apenas (sem usar patsaida vazio como critério)
