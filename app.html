@@ -2512,6 +2512,10 @@ function renderEstoque(){
     if(!grupos[it.cat]){grupos[it.cat]=[];ordemCats.push(it.cat);}
     grupos[it.cat].push(it);
   });
+  // Ordenar itens de cada grupo alfabeticamente
+  ordemCats.forEach(function(cat){
+    grupos[cat].sort(function(a,b){return a.nome.localeCompare(b.nome,'pt');});
+  });
 
   list.innerHTML=ordemCats.map(function(cat){
     // totais da categoria
@@ -2755,6 +2759,10 @@ function renderCat(){
   if(!items.length){list.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div>Nenhum item</div></div>';return;}
   var grupos={};
   items.forEach(function(i){if(!grupos[i.cat])grupos[i.cat]=[];grupos[i.cat].push(i);});
+  // Ordenar itens de cada grupo alfabeticamente
+  Object.keys(grupos).forEach(function(cat){
+    grupos[cat].sort(function(a,b){return a.nome.localeCompare(b.nome,'pt');});
+  });
   list.innerHTML=Object.keys(grupos).map(function(cat){
     var catEsc=cat.replace(/'/g,"\\'");
     return '<div class="grupo-header">'+
