@@ -1179,8 +1179,22 @@ function renderDet(){
       h+='<div class="empty"><div class="empty-icon">📦</div><div>Adicione materiais para o próximo carregamento</div></div>';
     } else if(todosPend.length){
       h+='<div style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Aguardando Carregamento</div>';
-      ev.materiais.forEach(function(mat,idx){
-        if(mat.carregamentoId) return;
+      // Ordenar pendentes por categoria e nome antes de renderizar
+      var pendOrdem=ev.materiais.map(function(m,i){return {m:m,i:i};}).filter(function(x){return !x.m.carregamentoId;});
+      pendOrdem.sort(function(a,b){
+        var catA=(CAT.find(function(c){return c.id===a.m.itemId;})||{}).cat||'Outros';
+        var catB=(CAT.find(function(c){return c.id===b.m.itemId;})||{}).cat||'Outros';
+        var cmp=catA.localeCompare(catB,'pt',{sensitivity:'base'});
+        if(cmp!==0) return cmp;
+        return a.m.nome.localeCompare(b.m.nome,'pt',{numeric:true,sensitivity:'base'});
+      });
+      var catAtual='';
+      pendOrdem.forEach(function(entry){var mat=entry.m;var idx=entry.i;
+        var matCat=(CAT.find(function(c){return c.id===mat.itemId;})||{}).cat||'Outros';
+        if(matCat!==catAtual){
+          catAtual=matCat;
+          h+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:Rajdhani,sans-serif;font-weight:700;padding:6px 0 2px;border-top:1px solid var(--border);margin-top:4px">'+matCat+'</div>';
+        }
         var qtd=isInsumo(mat.itemId)?(mat.qtdSaida||0):(mat.patsaida&&mat.patsaida.length?mat.patsaida.length:(mat.qtdSaida||0));
         var tags=mat.patsaida?mat.patsaida.map(function(p){return '<span class="pat-tag saiu">'+p+'</span>';}).join(''):'';
         var acoes='';
@@ -2492,6 +2506,15 @@ function confirmarImport(){
       });
     }
   });
+  // Reordenar ev.materiais por categoria e depois por nome (alfabético natural)
+  ev.materiais.sort(function(a,b){
+    var catA=(CAT.find(function(c){return c.id===a.itemId;})||{}).cat||'Outros';
+    var catB=(CAT.find(function(c){return c.id===b.itemId;})||{}).cat||'Outros';
+    var cmp=catA.localeCompare(catB,'pt',{sensitivity:'base'});
+    if(cmp!==0) return cmp;
+    return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});
+  });
+
   // manter solic como solicitado — só muda para carregado quando Fred finalizar
   // mas marcar que foi importada
   var s=SOLICS.find(function(x){return x.id===importSolicId;});
