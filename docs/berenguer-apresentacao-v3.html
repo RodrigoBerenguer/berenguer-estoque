@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Berenguer — Sistema de Controle de Estoque v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #a07010; --gold-bg: #fdf7e8; --gold-border: #d4b040;
+    --dark: #1a1d27; --text: #222; --text2: #555; --text3: #999;
+    --green: #1a6b47; --green-bg: #eaf6f0; --green-border: #8ecfb0;
+    --blue: #1a5090; --blue-bg: #eaf0fb; --blue-border: #8ab4e8;
+    --red: #9b2335; --red-bg: #fdeaea; --red-border: #e8a0a0;
+    --border: #ddd; --surface: #f7f7f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #e8e8e8; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); }
+
+  /* CADA .page = 1 FOLHA A4 EXATA */
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    height: 297mm;
+    background: #fff;
+    margin: 0 auto 12px;
+    padding: 18mm 18mm 14mm;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* CAPA tem fundo escuro */
+  .page.cover { background: var(--dark); color: #fff; padding: 16mm 18mm 14mm; }
+
+  @media print {
+    body { background: none; }
+    .page { margin: 0; page-break-after: always; page-break-inside: avoid; }
+    .page:last-child { page-break-after: auto; }
+  }
+
+  /* ── CAPA ─────────────────────────────────────────────── */
+  .logo-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10mm; }
+  .logo-hex { width: 40px; height: 40px; background: var(--gold-border); clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%); display: flex; align-items: center; justify-content: center; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 9px; color: var(--dark); line-height: 1.2; text-align: center; flex-shrink: 0; }
+  .logo-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 2px; color: #fff; }
+  .logo-sub { font-size: 9px; color: #777; letter-spacing: 3px; text-transform: uppercase; }
+  .version-tag { margin-left: auto; border: 1px solid var(--gold-border); color: var(--gold-border); font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 1px; padding: 3px 10px; border-radius: 12px; white-space: nowrap; }
+  .cover-label { font-family: 'Rajdhani', sans-serif; font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: #777; margin-bottom: 6px; }
+  .cover-h1 { font-family: 'Bebas Neue', sans-serif; line-height: .9; margin-bottom: 8mm; }
+  .cover-h1 .l1 { display: block; font-size: 70px; color: #fff; }
+  .cover-h1 .l2 { display: block; font-size: 70px; color: var(--gold-border); }
+  .cover-desc { font-size: 13px; color: #aaa; max-width: 480px; line-height: 1.6; margin-bottom: 8mm; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); border-top: 1px solid #333; margin-top: auto; }
+  .stat { padding: 12px 0; border-right: 1px solid #333; }
+  .stat:last-child { border-right: none; }
+  .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: var(--gold-border); line-height: 1; }
+  .stat-label { font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: #666; font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-top: 2px; }
+
+  /* ── TIPOGRAFIA GERAL ────────────────────────────────── */
+  .eyebrow { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .eyebrow::after { content: ''; height: 1px; background: #ddd; width: 60px; }
+  h2 { font-family: 'Bebas Neue', sans-serif; font-size: 44px; line-height: 1; color: var(--dark); margin-bottom: 6px; }
+  h2 span { color: var(--gold); }
+  h3 { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dark); margin-bottom: 6px; }
+  .lead { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 6mm; }
+  .body { font-size: 12px; color: var(--text2); line-height: 1.55; }
+
+  /* ── CARDS ───────────────────────────────────────────── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; }
+  .card.gold { background: var(--gold-bg); border-color: var(--gold-border); }
+  .card.green { background: var(--green-bg); border-color: var(--green-border); }
+  .card.blue { background: var(--blue-bg); border-color: var(--blue-border); }
+  .card.red { background: var(--red-bg); border-color: var(--red-border); }
+  .card-icon { font-size: 20px; margin-bottom: 6px; display: block; }
+
+  /* ── GRID ────────────────────────────────────────────── */
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .g5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; }
+
+  /* ── LISTAS ──────────────────────────────────────────── */
+  .cl { list-style: none; }
+  .cl li { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--text2); padding: 2px 0; }
+  .cl li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; font-size: 11px; margin-top: 1px; }
+  .cl li.no::before { content: '×'; color: var(--red); }
+  .al { list-style: none; }
+  .al li { display: flex; gap: 6px; font-size: 12px; color: var(--text2); padding: 2px 0; }
+  .al li::before { content: '→'; color: var(--gold); flex-shrink: 0; }
+
+  /* ── TIMELINE ────────────────────────────────────────── */
+  .tl { padding-left: 36px; position: relative; flex: 1; }
+  .tl::before { content: ''; position: absolute; left: 13px; top: 4px; bottom: 0; width: 2px; background: linear-gradient(to bottom, var(--gold-border), #eee); }
+  .tl-item { position: relative; margin-bottom: 10px; }
+  .tl-n { position: absolute; left: -36px; width: 26px; height: 26px; background: var(--dark); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: var(--gold-border); top: 0; flex-shrink: 0; }
+  .tl-t { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .8px; text-transform: uppercase; color: var(--dark); margin-bottom: 2px; }
+  .tl-b { font-size: 11px; color: var(--text2); line-height: 1.5; margin-bottom: 3px; }
+  .tag { display: inline-block; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; }
+  .tag.adm { background: var(--gold-bg); color: var(--gold); border: 1px solid var(--gold-border); }
+  .tag.tec { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border); }
+  .tag.both { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+
+  /* ── TABELA ──────────────────────────────────────────── */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 11px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .tbl th { background: var(--dark); color: var(--gold-border); font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 7px 10px; text-align: left; }
+  .tbl td { padding: 7px 10px; color: var(--text2); border-top: 1px solid var(--border); vertical-align: top; }
+  .tbl tr:nth-child(even) td { background: var(--surface); }
+  .tbl td.hl { color: var(--dark); font-weight: 600; font-size: 11px; }
+
+  /* ── FÓRMULA ─────────────────────────────────────────── */
+  .formula { background: var(--gold-bg); border: 1px solid var(--gold-border); border-radius: 6px; padding: 12px 16px; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; font-family: 'Rajdhani', sans-serif; font-weight: 700; }
+  .fp { text-align: center; }
+  .fp-lbl { font-size: 8px; letter-spacing: 1px; text-transform: uppercase; color: var(--text3); display: block; margin-bottom: 1px; }
+  .fp-val { color: var(--dark); font-size: 16px; }
+  .fop { color: var(--text3); font-size: 18px; }
+  .feq { color: var(--gold); font-size: 20px; }
+  .fres .fp-val { color: var(--gold); font-size: 18px; }
+
+  /* ── CODE ────────────────────────────────────────────── */
+  .code { background: var(--dark); border-radius: 5px; padding: 10px 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gold-border); text-align: center; }
+  .code .sub { color: #777; font-size: 10px; margin-top: 3px; display: block; }
+
+  /* ── STEPS ───────────────────────────────────────────── */
+  .sg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .step { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 8px 10px; }
+  .step-n { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 8px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; margin-bottom: 2px; }
+  .step-t { font-size: 11px; color: var(--text2); }
+
+  /* ── FLOW STEPS ──────────────────────────────────────── */
+  .fs { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 8px 4px; text-align: center; }
+  .fs.gld { background: var(--gold-bg); border-color: var(--gold-border); }
+  .fs-icon { font-size: 18px; margin-bottom: 4px; }
+  .fs-lbl { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 9px; letter-spacing: .8px; text-transform: uppercase; color: var(--dark); }
+  .fs-sub { font-size: 9px; color: var(--text3); margin-top: 1px; }
+
+  /* ── BADGE ───────────────────────────────────────────── */
+  .badge { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; display: inline-block; margin-top: 3px; }
+  .badge.qty { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .badge.pat { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border); }
+
+  /* ── FOOTER ──────────────────────────────────────────── */
+  .footer { border-top: 1px solid #e0e0e0; padding-top: 8px; margin-top: auto; display: flex; align-items: center; justify-content: space-between; }
+  .fl { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 10px; color: var(--dark); letter-spacing: .5px; }
+  .fr { font-size: 9px; color: var(--text3); }
+
+  /* ── ESPAÇOS ─────────────────────────────────────────── */
+  .sp { height: 8px; }
+  .sp2 { height: 4px; }
+  .divider { height: 1px; background: #e8e8e8; margin: 8px 0; }
+</style>
+</head>
+<body>
+
+<!-- ══ 1. CAPA ══════════════════════════════════════════════ -->
+<div class="page cover">
+  <div class="logo-row">
+    <div class="logo-hex">BER<br>ENG<br>UER</div>
+    <div>
+      <div class="logo-name">BERENGUER</div>
+      <div class="logo-sub">Engenharia de Eventos</div>
+    </div>
+    <div class="version-tag">VERSÃO 3.0 — 2026</div>
+  </div>
+  <div class="cover-label">Sistema de Gestão</div>
+  <div class="cover-h1">
+    <span class="l1">CONTROLE DE</span>
+    <span class="l2">ESTOQUE</span>
+  </div>
+  <p class="cover-desc">Uma plataforma completa para rastrear materiais, patrimônios e operações de campo — do galpão ao evento, em tempo real.</p>
+  <div style="flex:1"></div>
+  <div class="stats-grid">
+    <div class="stat"><div class="stat-num">148+</div><div class="stat-label">Tipos de Item</div></div>
+    <div class="stat"><div class="stat-num">2</div><div class="stat-label">Perfis de Acesso</div></div>
+    <div class="stat"><div class="stat-num">10</div><div class="stat-label">Módulos Ativos</div></div>
+    <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Online e Offline</div></div>
+  </div>
+</div>
+
+<!-- ══ 2. POR QUE EXISTE ═══════════════════════════════════ -->
+<div class="page">
+  <div class="eyebrow">Por que existe</div>
+  <h2>A IMPORTÂNCIA DO <span>SISTEMA</span></h2>
+  <p class="lead">Cada cabo, quadro e equipamento da Berenguer tem valor. Saber onde está, quem levou e quando voltou não é burocracia — é controle de negócio.</p>
+  <div class="card gold" style="margin-bottom:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);margin-bottom:6px">"O QUE NÃO É MEDIDO, NÃO É GERENCIADO."</div>
+    <p class="body">A Berenguer opera com centenas de eventos simultâneos, múltiplos técnicos em campo e um inventário de mais de 5.000 peças. Sem rastreamento preciso, perdas passam despercebidas, patrimônios somem entre eventos e o estoque disponível nunca é confiável.</p>
+    <div class="sp2"></div>
+    <p class="body">Este sistema resolve isso: cada saída tem patrimônio registrado, cada retorno é conferido, cada perda é documentada — e o estoque disponível é calculado em tempo real, sempre preciso.</p>
+  </div>
+  <div class="g3">
+    <div class="card"><span class="card-icon">📍</span><h3>Rastreio</h3><p class="body">Cada patrimônio rastreado por número único e QR Code</p></div>
+    <div class="card"><span class="card-icon">⚡</span><h3>Agilidade</h3><p class="body">Conferência de retorno via câmera, sem papel</p></div>
+    <div class="card"><span class="card-icon">💰</span><h3>Controle</h3><p class="body">Perdas documentadas com valor e responsável</p></div>
+  </div>
+  <div class="footer"><div class="fl">BERENGUER — Controle de Estoque v3.0</div><div class="fr">berenguerengenharia.github.io/berenguer-estoque/app.html</div></div>
+</div>
+
+<!-- ══ 3. PERFIS ════════════════════════════════════════════ -->
+<div class="page">
+  <div class="eyebrow">Perfis de Usuário</div>
+  <h2>QUEM FAZ <span>O QUÊ</span></h2>
+  <p class="lead">Dois perfis com permissões distintas. A hierarquia garante que operações críticas só sejam executadas por quem tem autoridade.</p>
+  <div class="g2" style="margin-bottom:10px;flex:1">
+    <div class="card gold">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:20px">👑</span>
+        <div>
+          <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase">Admin — Fred</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)">Senha: BerenguerAdmin</div>
+        </div>
+      </div>
+      <ul class="cl">
+        <li>Criar e encerrar eventos</li>
+        <li>Adicionar materiais e patrimônios</li>
+        <li>Finalizar carregamentos</li>
+        <li>Importar solicitações</li>
+        <li>Excluir registros</li>
+        <li>Catálogo e etiquetas QR</li>
+        <li>Registrar e remover perdas</li>
+      </ul>
+    </div>
+    <div class="card blue">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:20px">👷</span>
+        <div>
+          <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase">Técnico</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)">Senha: BerenguerGeral</div>
+        </div>
+      </div>
+      <ul class="cl">
+        <li>Ver e abrir eventos</li>
+        <li>Criar solicitações de material</li>
+        <li>Imprimir e copiar listas</li>
+        <li>Transferir material entre eventos</li>
+        <li>Conferência de retorno via QR</li>
+        <li>Registrar perdas assistidas</li>
+        <li class="no">Adicionar material direto</li>
+        <li class="no">Catálogo, etiquetas e encerrar evento</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card gold" style="font-size:12px">
+    <strong style="color:var(--gold)">💡 Sessão inteligente:</strong> Admin pode marcar <em>"Lembrar por 30 dias"</em> no login. Técnico permanece logado enquanto o navegador estiver aberto. O botão <strong>SAIR ↗</strong> encerra a sessão a qualquer momento.
+  </div>
+  <div class="footer"><div class="fl">BERENGUER — Controle de Estoque v3.0</div><div class="fr">berenguerengenharia.github.io/berenguer-estoque/app.html</div></div>
+</div>
+
+<!-- ══ 4. MÓDULOS ═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="eyebrow">Módulos do Sistema</div>
+  <h2>AS <span>10 ABAS</span></h2>
+  <p class="lead">Cada aba resolve um problema específico da operação.</p>
+  <div class="g2" style="margin-bottom:8px">
+    <div class="card"><span class="card-icon">⚡</span><h3>Eventos</h3><p class="body">Painel principal. Criar evento com data, local, responsável. Histórico completo de operações.</p></div>
+    <div class="card"><span class="card-icon">📋</span><h3>Solicitações</h3><p class="body">Caixas separadas para Materiais e Insumos/EPI/Aterramento. Admin importa para o evento com um clique.</p></div>
+  </div>
+  <div class="g2" style="margin-bottom:8px">
+    <div class="card"><span class="card-icon">📦</span><h3>Estoque</h3><p class="body">Disponibilidade em tempo real. Total − Em campo − Perdidos = Disponível. Ordenação alfabética natural.</p></div>
+    <div class="card"><span class="card-icon">🔍</span><h3>Patrimônio</h3><p class="body">Busca por número ou QR Code. Mostra localização atual e histórico completo de movimentações.</p></div>
+  </div>
+  <div class="g2" style="margin-bottom:8px">
+    <div class="card"><span class="card-icon">🔻</span><h3>Perdas</h3><p class="body">Gráfico mensal de perdas. Sub-aba Assistidas com rastreio por inserção. Admin remove e item volta ao estoque.</p></div>
+    <div class="card"><span class="card-icon">📊</span><h3>Relatórios</h3><p class="body">Gráficos por período, histórico de carregamentos por evento e prejuízo acumulado por categoria.</p></div>
+  </div>
+  <div class="g3">
+    <div class="card"><span class="card-icon">🖨️</span><h3>Imprimir</h3><p class="body">Listas para impressão ou WhatsApp. Eventos, carregamentos e perdas.</p></div>
+    <div class="card"><span class="card-icon">⚙️</span><h3>Catálogo</h3><p class="body">148+ itens. Somente admin edita. Ordenação natural por categoria.</p></div>
+    <div class="card"><span class="card-icon">🏷️</span><h3>Etiquetas QR</h3><p class="body">Por faixa de patrimônio. A4, 4 colunas. Chrome desktop.</p></div>
+  </div>
+  <div class="footer"><div class="fl">BERENGUER — Controle de Estoque v3.0</div><div class="fr">berenguerengenharia.github.io/berenguer-estoque/app.html</div></div>
+</div>
+
+<!-- ══ 5. DOIS TIPOS DE MATERIAL ══════════════════════════ -->
+<div class="page">
+  <div class="eyebrow">Novo na v3.0</div>
+  <h2>DOIS TIPOS DE <span>MATERIAL</span></h2>
+  <p class="lead">O sistema diferencia materiais com patrimônio rastreável de itens consumíveis — cada um com seu próprio fluxo.</p>
+  <div class="g2" style="margin-bottom:10px">
+    <div class="card blue">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:20px">🔌</span>
+        <div>
+          <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--blue)">Materiais com Patrimônio</div>
+          <span class="badge pat">Rastreado por PAT</span>
+        </div>
+      </div>
+      <p class="body" style="margin-bottom:8px">Cada unidade tem número único. Saída e retorno conferidos individualmente.</p>
+      <ul class="cl">
+        <li>Cabos PP, Grossos e 5 Vias</li>
+        <li>Quadros e Refletores</li>
+        <li>Conexões, Conectores e Réguas</li>
+      </ul>
+    </div>
+    <div class="card green">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:20px">🔧</span>
+        <div>
+          <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--green)">Insumos / EPI / Aterramento</div>
+          <span class="badge qty">Rastreado por Quantidade</span>
+        </div>
+      </div>
+      <p class="body" style="margin-bottom:8px">Sem número de patrimônio. Saída e retorno por quantidade total. Aba própria no evento.</p>
+      <ul class="cl">
+        <li>Insumos (45): Escada, Fita Isolante, Fusível...</li>
+        <li>EPI (10): Capacete, Luva, Bota, Cinto...</li>
+        <li>Aterramento (6): Cordoalha, Haste, Para-raio...</li>
+      </ul>
+    </div>
+  </div>
+  <div class="eyebrow">Fluxo de Insumos no Evento</div>
+  <div class="sp2"></div>
+  <div class="g5" style="margin-bottom:10px">
+    <div class="fs"><div class="fs-icon">➕</div><div class="fs-lbl">Adicionar</div><div class="fs-sub">Aba Insumos</div></div>
+    <div class="fs"><div class="fs-icon">🚛</div><div class="fs-lbl">Carregar</div><div class="fs-sub">Botão próprio</div></div>
+    <div class="fs"><div class="fs-icon">📥</div><div class="fs-lbl">Retornar</div><div class="fs-sub">Por quantidade</div></div>
+    <div class="fs"><div class="fs-icon">🔒</div><div class="fs-lbl">Encerrar</div><div class="fs-sub">Perdas auto</div></div>
+    <div class="fs gld"><div class="fs-icon">🔻</div><div class="fs-lbl" style="color:var(--gold)">Perdas</div><div class="fs-sub">Card unificado</div></div>
+  </div>
+  <div class="card gold" style="font-size:12px">
+    <strong style="color:var(--gold)">Nota:</strong> Insumos, EPI e Aterramento <strong>nunca</strong> pedem número de patrimônio. Têm aba própria no evento, botão de carregamento independente e conferência de retorno por quantidade.
+  </div>
+  <div class="footer"><div class="fl">BERENGUER — Controle de Estoque v3.0</div><div class="fr">berenguerengenharia.github.io/berenguer-estoque/app.html</div></div>
+</div>
+
+<!-- ══ 6. FLUXO DO EVENTO ══════════════════════════════════ -->
+<div class="page">
+  <div class="eyebrow">Operação</div>
+  <h2>FLUXO DE <span>UM EVENTO</span></h2>
+  <p class="lead">Do momento em que o evento é criado até o encerramento, cada etapa tem um responsável e um registro preciso.</p>
+  <div class="tl">
+    <div class="tl-item">
+      <div class="tl-n">1</div>
+      <div class="tl-t">Criar o Evento</div>
+      <p class="tl-b">Admin cria com nome, data, local, responsável e transportador. O evento aparece como SAÍDA no painel.</p>
+      <span class="tag adm">Admin</span>
+    </div>
+    <div class="tl-item">
+      <div class="tl-n">2</div>
+      <div class="tl-t">Adicionar Materiais com Patrimônio</div>
+      <p class="tl-b">Admin seleciona o tipo e digita os números de patrimônio — ou escaneia o QR Code. O sistema bloqueia patrimônios já em campo ou registrados como perda.</p>
+      <span class="tag adm">Admin</span>
+    </div>
+    <div class="tl-item">
+      <div class="tl-n">3</div>
+      <div class="tl-t">Adicionar Insumos / EPI / Aterramento</div>
+      <p class="tl-b">Na aba <strong>Insumos / EPI / Aterramento</strong>, Admin adiciona por quantidade. Botão próprio para finalizar o carregamento, independente dos materiais.</p>
+      <span class="tag adm">Admin</span>
+    </div>
+    <div class="tl-item">
+      <div class="tl-n">4</div>
+      <div class="tl-t">Importar Solicitação (opcional)</div>
+      <p class="tl-b">Se o técnico criou uma solicitação, admin importa com um clique. Materiais e insumos entram automaticamente nas listas correspondentes.</p>
+      <span class="tag adm">Admin</span>
+    </div>
+    <div class="tl-item">
+      <div class="tl-n">5</div>
+      <div class="tl-t">Finalizar Carregamento</div>
+      <p class="tl-b">Admin finaliza o carregamento. O sistema registra data, hora e congela os itens. Um evento pode ter múltiplos carregamentos.</p>
+      <span class="tag adm">Admin</span>
+    </div>
+    <div class="tl-item">
+      <div class="tl-n">6</div>
+      <div class="tl-t">Conferência de Retorno</div>
+      <p class="tl-b">Aba Retorno. Patrimônios: toque nos números ou escaneie o QR Code. Insumos: informe a quantidade retornada.</p>
+      <span class="tag both">Técnico ou Admin</span>
+    </div>
+    <div class="tl-item">
+      <div class="tl-n">7</div>
+      <div class="tl-t">Encerrar Evento</div>
+      <p class="tl-b">Itens não retornados são registrados como perdas automaticamente — patrimônios por número, insumos por quantidade. Mesmo card na aba Perdas.</p>
+      <span class="tag adm">Admin</span>
+    </div>
+  </div>
+  <div class="footer"><div class="fl">BERENGUER — Controle de Estoque v3.0</div><div class="fr">berenguerengenharia.github.io/berenguer-estoque/app.html</div></div>
+</div>
+
+<!-- ══ 7. PERDAS ASSISTIDAS ════════════════════════════════ -->
+<div class="page">
+  <div class="eyebrow">Funcionalidade Exclusiva</div>
+  <h2>PERDAS <span>ASSISTIDAS</span></h2>
+  <p class="lead">Registre perdas antes do encerramento — sem esperar, com rastreio completo de cada inserção.</p>
+  <div class="card gold" style="margin-bottom:10px">
+    <h3 style="color:var(--red);margin-bottom:6px">🔻 O que são Perdas Assistidas?</h3>
+    <p class="body">Durante um evento em andamento, quando o técnico constata que um patrimônio foi perdido, danificado ou extraviado, ele pode registrar isso imediatamente — sem precisar esperar o encerramento.</p>
+    <div class="sp2"></div>
+    <p class="body">O item sai instantaneamente do estoque disponível, aparece na aba Perdas vinculado ao evento, e fica <strong>bloqueado para qualquer outra operação</strong> até que o Admin decida removê-lo.</p>
+  </div>
+  <div class="sg" style="margin-bottom:10px">
+    <div class="step"><div class="step-n">Passo 01</div><div class="step-t">Abra o evento → aba <strong>Retorno</strong></div></div>
+    <div class="step"><div class="step-n">Passo 02</div><div class="step-t">Clique em <strong>🔻 PERDAS ASSISTIDA</strong></div></div>
+    <div class="step"><div class="step-n">Passo 03</div><div class="step-t">Marque os <strong>patrimônios perdidos</strong></div></div>
+    <div class="step"><div class="step-n">Passo 04</div><div class="step-t">Clique em <strong>REGISTRAR PERDAS</strong></div></div>
+  </div>
+  <div class="g2">
+    <div class="card red">
+      <h3 style="color:var(--red);margin-bottom:6px">O que acontece</h3>
+      <ul class="al">
+        <li>Item sai do estoque disponível na hora</li>
+        <li>Vai para aba Perdas vinculado ao evento</li>
+        <li>Bloqueado para transferência e retorno</li>
+        <li>Some da lista de pendentes na conferência</li>
+        <li>Registrado com data e hora exata</li>
+      </ul>
+    </div>
+    <div class="card green">
+      <h3 style="color:var(--green);margin-bottom:6px">Se recuperado</h3>
+      <ul class="al">
+        <li>Admin vai à aba Perdas</li>
+        <li>Remove o item da listagem</li>
+        <li>Item volta ao estoque disponível</li>
+        <li>Desbloqueado para todas as operações</li>
+        <li>Histórico de inserções mantido</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><div class="fl">BERENGUER — Controle de Estoque v3.0</div><div class="fr">berenguerengenharia.github.io/berenguer-estoque/app.html</div></div>
+</div>
+
+<!-- ══ 8. QR CODE + LÓGICA ════════════════════════════════ -->
+<div class="page">
+  <div class="eyebrow">Rastreio</div>
+  <h2>SISTEMA <span>QR CODE</span></h2>
+  <p class="lead">Cada patrimônio tem um QR Code único. Escaneie para registrar saída, retorno ou identificar o item.</p>
+  <div class="code" style="margin-bottom:10px">
+    BERG | tipo-do-material | numero-patrimônio
+    <span class="sub">Exemplo: BERG|c001|101 — Cabo PP 2,5mm, patrimônio nº 101</span>
+  </div>
+  <div class="g2" style="margin-bottom:8px">
+    <div class="card"><span class="card-icon">📷</span><h3>Câmera ao Vivo</h3><p class="body">Botão azul. Tempo real. iOS 17+ e Android Chrome. Aponte para o QR e aguarde.</p></div>
+    <div class="card"><span class="card-icon">🖼️</span><h3>Foto ou Galeria</h3><p class="body">Botão verde. Tira foto ou escolhe da galeria. Se falhar, digita o número manualmente.</p></div>
+  </div>
+  <div class="g2" style="margin-bottom:10px">
+    <div class="card"><span class="card-icon">✅</span><h3>Saída Inteligente</h3><p class="body">Ao escanear na aba Saída, reconhece o tipo automaticamente e adiciona o número.</p></div>
+    <div class="card"><span class="card-icon">🔄</span><h3>Retorno Automático</h3><p class="body">Na aba Retorno, ao escanear o QR Code o patrimônio é marcado como retornado.</p></div>
+  </div>
+  <div class="divider"></div>
+  <div class="eyebrow">Lógica de Estoque</div>
+  <h2 style="font-size:32px;margin-bottom:6px">COMO O DISPONÍVEL <span>É CALCULADO</span></h2>
+  <div class="formula" style="margin-bottom:8px">
+    <div class="fp"><span class="fp-lbl">Total</span><span class="fp-val">Inventário</span></div>
+    <span class="fop">−</span>
+    <div class="fp"><span class="fp-lbl">Em Campo</span><span class="fp-val">Saídas</span></div>
+    <span class="fop">−</span>
+    <div class="fp"><span class="fp-lbl">Perdidos</span><span class="fp-val">Registros</span></div>
+    <span class="feq">=</span>
+    <div class="fp fres"><span class="fp-lbl">Disponível</span><span class="fp-val">✓ Real</span></div>
+  </div>
+  <div class="g3">
+    <div class="card"><h3>Total</h3><p class="body">Cadastrado no catálogo. Alterado somente pelo Admin.</p></div>
+    <div class="card"><h3>Em Campo</h3><p class="body">PATs saídos não retornados. Insumos: qtdSaída − qtdRetorno.</p></div>
+    <div class="card"><h3>Perdidos</h3><p class="body">Via Perda Assistida ou no encerramento do evento.</p></div>
+  </div>
+  <div class="footer"><div class="fl">BERENGUER — Controle de Estoque v3.0</div><div class="fr">berenguerengenharia.github.io/berenguer-estoque/app.html</div></div>
+</div>
+
+<!-- ══ 9. BOAS PRÁTICAS + CONTRACAPA ══════════════════════ -->
+<div class="page">
+  <div class="eyebrow">Boas Práticas</div>
+  <h2>DICAS <span>IMPORTANTES</span></h2>
+  <div class="sp"></div>
+  <table class="tbl" style="margin-bottom:auto">
+    <thead><tr><th width="3%"></th><th width="40%">Regra</th><th>Detalhe</th></tr></thead>
+    <tbody>
+      <tr><td>⚠</td><td class="hl">Patrimônio em campo não pode ser adicionado duas vezes.</td><td>O sistema bloqueia automaticamente se o número já estiver em outro evento ativo.</td></tr>
+      <tr><td>🔻</td><td class="hl">Patrimônio marcado como perda fica completamente bloqueado.</td><td>Não aparece em transferências, conferências ou novas saídas — até ser removido pelo Admin.</td></tr>
+      <tr><td>🌐</td><td class="hl">Precisa de internet para sincronizar entre usuários.</td><td>Sem conexão, dados salvos localmente e sincronizados quando a internet voltar.</td></tr>
+      <tr><td>🖨️</td><td class="hl">Para imprimir etiquetas, use o computador.</td><td>No celular o botão pode ser bloqueado. Chrome no desktop garante os melhores resultados.</td></tr>
+      <tr><td>🔄</td><td class="hl">Um evento pode ter múltiplos carregamentos.</td><td>Patrimônios e insumos têm botões independentes. Cada carregamento gera relatório individual.</td></tr>
+      <tr><td>🔧</td><td class="hl">Insumos, EPI e Aterramento nunca pedem patrimônio.</td><td>Têm aba própria, carregamento independente e conferência por quantidade.</td></tr>
+    </tbody>
+  </table>
+  <div style="text-align:center;padding:20px 0;border-top:1px solid #e0e0e0;margin-top:auto">
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px">
+      <div class="logo-hex" style="background:var(--dark)"><span style="color:var(--gold-border);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:9px;line-height:1.2">BER<br>ENG<br>UER</span></div>
+      <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:20px;letter-spacing:2px;color:var(--dark)">BERENGUER</div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:4px">Sistema de Controle de Estoque — Versão 3.0 — 2026</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold)">berenguerengenharia.github.io/berenguer-estoque/app.html</div>
+  </div>
+</div>
+
+</body>
+</html>
