@@ -501,7 +501,7 @@
       <label class="form-label">Material *</label>
       <div class="swrap" style="margin-bottom:0">
         <span class="sicon">🔍</span>
-        <input class="mat-busca-input" id="mat-busca" placeholder="Buscar material..." oninput="filtrarMatAtual()">
+        <input class="mat-busca-input" id="mat-busca" placeholder="Buscar em Cabos e Quadros ou Insumos..." oninput="filtrarMatAtual()">
       </div>
       <div class="mat-lista" id="mat-lista"></div>
       <div class="mat-selecionado" id="mat-selecionado">
@@ -614,22 +614,22 @@
     <div id="solic-itens-lista" style="margin-bottom:12px"></div>
     <!-- MATERIAIS COM PATRIMÔNIO -->
     <div style="margin-bottom:10px">
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);margin-bottom:6px;font-weight:600">📦 Materiais</div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);margin-bottom:6px;font-weight:600">🔌 Cabos e Quadros</div>
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px">
         <div class="swrap" style="margin-bottom:8px">
           <span class="sicon">🔍</span>
-          <input class="mat-busca-input" id="solic-busca" placeholder="Buscar material..." oninput="filtrarSolicMat()">
+          <input class="mat-busca-input" id="solic-busca" placeholder="Buscar em Cabos e Quadros..." oninput="filtrarSolicMat()">
         </div>
         <div id="solic-mat-lista" style="max-height:200px;overflow-y:auto"></div>
       </div>
     </div>
     <!-- INSUMOS / EPI / ATERRAMENTO -->
     <div>
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);margin-bottom:6px;font-weight:600">🔧 Insumos / EPI / Aterramento</div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);margin-bottom:6px;font-weight:600">📦 Insumos</div>
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px">
         <div class="swrap" style="margin-bottom:8px">
           <span class="sicon">🔍</span>
-          <input class="mat-busca-input" id="solic-busca-ins" placeholder="Buscar insumo..." oninput="filtrarSolicIns()">
+          <input class="mat-busca-input" id="solic-busca-ins" placeholder="Buscar em Insumos..." oninput="filtrarSolicIns()">
         </div>
         <div id="solic-ins-lista" style="max-height:200px;overflow-y:auto"></div>
       </div>
@@ -1158,7 +1158,7 @@ function renderDet(){
       '<button onclick="abrirListaSolicEvento(\''+evAtual+'\')" style="background:rgba(179,136,255,.15);border:1px solid rgba(179,136,255,.3);color:var(--purple);font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer">VER</button>'+
     '</div>':'');
   document.getElementById('d-tabs').innerHTML=['saida','conferencia','resumo','transferir','insumos','areas'].map(function(t,i){
-    return '<div class="filter-chip '+(abaAtual===t?'active':'')+'" onclick="setAba(\''+t+'\')">'+['📤 Saída','📥 Retorno','📊 Resumo','🔄 Transferir','📦 Insumos / EPI / Aterramento','📍 Áreas'][i]+'</div>';
+    return '<div class="filter-chip '+(abaAtual===t?'active':'')+'" onclick="setAba(\''+t+'\')">'+['📤 Saída','📥 Retorno','📊 Resumo','🔄 Transferir','📦 Insumos','📍 Áreas'][i]+'</div>';
   }).join('');
   var c=document.getElementById('d-content');
   if(abaAtual==='saida'){
@@ -1189,11 +1189,22 @@ function renderDet(){
         return a.m.nome.localeCompare(b.m.nome,'pt',{numeric:true,sensitivity:'base'});
       });
       var catAtual='';
+      var grupoAtual=''; // 'patrimonio' ou 'insumo'
       pendOrdem.forEach(function(entry){var mat=entry.m;var idx=entry.i;
         var matCat=(CAT.find(function(c){return c.id===mat.itemId;})||{}).cat||'Outros';
+        var novoGrupo=isInsumo(mat.itemId)?'insumo':'patrimonio';
+        // Cabeçalho de grupo (Cabos e Quadros / Insumos)
+        if(novoGrupo!==grupoAtual){
+          grupoAtual=novoGrupo;
+          catAtual='';
+          var grupoLabel=novoGrupo==='patrimonio'?'🔌 Cabos e Quadros':'📦 Insumos';
+          var grupoColor=novoGrupo==='patrimonio'?'var(--blue, #4a9eff)':'var(--accent)';
+          h+='<div style="font-size:11px;color:'+grupoColor+';text-transform:uppercase;letter-spacing:1px;font-family:Rajdhani,sans-serif;font-weight:700;padding:8px 0 4px;border-top:2px solid var(--border);margin-top:8px">'+grupoLabel+'</div>';
+        }
+        // Cabeçalho de categoria dentro do grupo
         if(matCat!==catAtual){
           catAtual=matCat;
-          h+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:Rajdhani,sans-serif;font-weight:700;padding:6px 0 2px;border-top:1px solid var(--border);margin-top:4px">'+matCat+'</div>';
+          h+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:Rajdhani,sans-serif;font-weight:700;padding:4px 0 2px;margin-top:2px">'+matCat+'</div>';
         }
         var qtd=isInsumo(mat.itemId)?(mat.qtdSaida||0):(mat.patsaida&&mat.patsaida.length?mat.patsaida.length:(mat.qtdSaida||0));
         var tags=mat.patsaida?mat.patsaida.map(function(p){return '<span class="pat-tag saiu">'+p+'</span>';}).join(''):'';
@@ -1587,7 +1598,7 @@ function renderDet(){
     var insCarg=insumosEvAll.filter(function(m){return m.carregamentoId;});
 
     if(ev.status!=='concluido'&&isAdmin()){
-      h+='<button class="btn btn-primary" onclick="abrirAddInsumo()" style="margin-bottom:16px">+ Adicionar Insumo / EPI / Aterramento</button>';
+      h+='<button class="btn btn-primary" onclick="abrirAddInsumo()" style="margin-bottom:16px">+ Adicionar Insumo</button>';
     }
 
     if(insPend.length){
@@ -1751,7 +1762,7 @@ function abrirAddInsumo(){
   if(!isAdmin()){toast('Apenas admin pode adicionar insumos','error');return;}
   matIdx=null;
   var ev=EVS.find(function(e){return e.id===evAtual;});
-  document.getElementById('mat-titulo').textContent='Adicionar Insumo / EPI / Aterramento';
+  document.getElementById('mat-titulo').textContent='Adicionar Insumo';
   document.getElementById('mat-sub').textContent=ev.nome;
   document.getElementById('mat-qty').value='';
   document.getElementById('mat-pats').value='';
@@ -5259,7 +5270,7 @@ function isInsumo(itemId){
   var it=CAT.find(function(c){return c.id===itemId;});
   if(!it||!it.cat) return false;
   var cat=it.cat.toLowerCase();
-  return cat==='insumos'||cat==='epi'||cat==='aterramento';
+  return cat==='insumos'||cat==='epi'||cat==='aterramento'||cat==='refletores'||cat==='conexões'||cat==='conectores';
 }
 function isInsumoMat(mat){
   // Detecta insumo/EPI pelo itemId apenas (sem usar patsaida vazio como critério)
