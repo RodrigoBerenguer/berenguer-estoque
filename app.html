@@ -2228,42 +2228,33 @@ function excluirSolic(id){
 
 
 // ── LISTA FIXA DE SOLICITAÇÃO ─────────────────────────────────
-var solicCatFiltro = null; // null = todas as categorias
+var solicCatFiltro = null;
 
 function renderSolicListaFixa(){
   var chips = document.getElementById('solic-cat-chips');
   var lista = document.getElementById('solic-lista-fixa');
   if(!chips || !lista) return;
 
-  // Montar lista completa do catálogo ordenada
   var todos = CAT.slice().sort(function(a,b){
-    var ca = a.cat||''; var cb = b.cat||'';
-    var cmp = ca.localeCompare(cb,'pt',{sensitivity:'base'});
+    var cmp = (a.cat||'').localeCompare(b.cat||'','pt',{sensitivity:'base'});
     if(cmp!==0) return cmp;
     return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});
   });
 
-  // Extrair categorias únicas na ordem de aparição
   var cats = [];
   todos.forEach(function(c){ if(cats.indexOf(c.cat)<0) cats.push(c.cat); });
 
-  // Renderizar chips de categoria
   chips.innerHTML = cats.map(function(cat){
     var ativo = solicCatFiltro===cat;
-    return '<button onclick="setSolicCatFiltro(''+cat.replace(/'/g,"\'")+'')" style="'+
-      'padding:5px 10px;border-radius:16px;border:1px solid '+(ativo?'var(--accent)':'var(--border)')+';'+
-      'background:'+(ativo?'var(--accent)':'transparent')+';'+
-      'color:'+(ativo?'#0d0f14':'var(--text2)')+';'+
-      'font-family:Rajdhani,sans-serif;font-weight:700;font-size:11px;letter-spacing:.5px;'+
-      'cursor:pointer;white-space:nowrap">'+cat+'</button>';
+    var bg = ativo ? 'var(--accent)' : 'transparent';
+    var cor = ativo ? '#0d0f14' : 'var(--text2)';
+    var brd = ativo ? 'var(--accent)' : 'var(--border)';
+    var catEsc = cat.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return '<button onclick="setSolicCatFiltro(\''+catEsc+'\')" style="padding:5px 10px;border-radius:16px;border:1px solid '+brd+';background:'+bg+';color:'+cor+';font-family:Rajdhani,sans-serif;font-weight:700;font-size:11px;letter-spacing:.5px;cursor:pointer;white-space:nowrap">'+cat+'</button>';
   }).join('');
 
-  // Filtrar por categoria se chip selecionado
-  var filtrados = solicCatFiltro
-    ? todos.filter(function(c){return c.cat===solicCatFiltro;})
-    : todos;
+  var filtrados = solicCatFiltro ? todos.filter(function(c){return c.cat===solicCatFiltro;}) : todos;
 
-  // Agrupar por categoria
   var grupos = {}; var ordem = [];
   filtrados.forEach(function(c){
     if(!grupos[c.cat]){grupos[c.cat]=[];ordem.push(c.cat);}
@@ -2277,51 +2268,36 @@ function renderSolicListaFixa(){
 
   var html = '';
   ordem.forEach(function(cat){
-    // cabeçalho de categoria
-    html += '<div style="padding:7px 14px;font-size:10px;font-family:Rajdhani,sans-serif;font-weight:700;'+
-      'letter-spacing:1px;text-transform:uppercase;color:var(--text3);'+
-      'background:var(--bg);border-bottom:1px solid var(--border)">'+cat+'</div>';
-
+    html += '<div style="padding:7px 14px;font-size:10px;font-family:Rajdhani,sans-serif;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);background:var(--bg);border-bottom:1px solid var(--border)">'+cat+'</div>';
     grupos[cat].forEach(function(c){
       var disp = disponivelReal(c.id);
       var zerado = disp <= 0;
       var ex = solicItensTemp.find(function(x){return x.itemId===c.id;});
       var qty = ex ? ex.qty : 0;
-      var cor = zerado ? 'var(--red)' : 'var(--green)';
+      var corDisp = zerado ? '#e05555' : '#2ecc8a';
       var dispLabel = zerado ? 'Indisponível' : 'Disp: '+disp;
+      var nomeEsc = c.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      var idEsc = c.id;
 
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;'+
-        'padding:10px 14px;border-bottom:1px solid var(--border);'+
-        'background:'+(qty>0?'rgba(240,192,64,.04)':'transparent')+'">'+
+      var btnMenos = qty>0
+        ? '<button onclick="solicQtyDireto(\''+idEsc+'\',\'-1\',\''+nomeEsc+'\')" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-weight:700;line-height:1">&#8722;</button>'
+        : '';
+      var spanQty = qty>0
+        ? '<span style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:15px;color:var(--accent);min-width:20px;text-align:center">'+qty+'</span>'
+        : '';
+      var btnMais = zerado
+        ? '<button disabled style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text3);font-size:16px;cursor:not-allowed;display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-weight:700;opacity:.4;line-height:1">+</button>'
+        : '<button onclick="solicQtyDireto(\''+idEsc+'\',\'1\',\''+nomeEsc+'\')" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(240,192,64,.4);background:rgba(240,192,64,.1);color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-weight:700;line-height:1">+</button>';
 
-        // nome + disponível
-        '<div style="flex:1;min-width:0;margin-right:10px">'+
-          '<div style="font-size:13px;font-weight:'+(qty>0?'600':'400')+';color:var(--text);'+
-            'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+c.nome+'</div>'+
-          '<div style="font-size:11px;color:'+cor+';margin-top:1px">'+dispLabel+'</div>'+
-        '</div>'+
-
-        // controles +/-
-        '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'+
-          (qty>0
-            ? '<button onclick="solicQtyDireto(''+c.id+'','-1',''+c.nome.replace(/'/g,"\'")+'')" '+
-                'style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);'+
-                'background:var(--surface);color:var(--text);font-size:16px;cursor:pointer;'+
-                'display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-weight:700">−</button>'+
-              '<span style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:15px;'+
-                'color:var(--accent);min-width:20px;text-align:center">'+qty+'</span>'
-            : '')+
-          '<button onclick="solicQtyDireto(''+c.id+'','1',''+c.nome.replace(/'/g,"\'")+'')" '+
-            (zerado ? 'disabled ' : '')+
-            'style="width:28px;height:28px;border-radius:6px;'+
-            'border:1px solid '+(zerado?'var(--border)':'rgba(240,192,64,.4)')+';'+
-            'background:'+(zerado?'var(--surface2)':'rgba(240,192,64,.1)')+';'+
-            'color:'+(zerado?'var(--text3)':'var(--accent)')+';'+
-            'font-size:16px;cursor:'+(zerado?'not-allowed':'pointer')+';'+
-            'display:flex;align-items:center;justify-content:center;'+
-            'font-family:Rajdhani,sans-serif;font-weight:700;opacity:'+(zerado?'.4':'1')+'">'+(zerado?'−':'+')+'</button>'+
-        '</div>'+
-      '</div>';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);background:'+(qty>0?'rgba(240,192,64,.04)':'transparent')+'">'
+        + '<div style="flex:1;min-width:0;margin-right:10px">'
+          + '<div style="font-size:13px;font-weight:'+(qty>0?'600':'400')+';color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+c.nome+'</div>'
+          + '<div style="font-size:11px;color:'+corDisp+';margin-top:1px">'+dispLabel+'</div>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
+          + btnMenos + spanQty + btnMais
+        + '</div>'
+      + '</div>';
     });
   });
 
@@ -2329,9 +2305,10 @@ function renderSolicListaFixa(){
 }
 
 function setSolicCatFiltro(cat){
-  solicCatFiltro = (solicCatFiltro===cat) ? null : cat; // toggle
+  solicCatFiltro = (solicCatFiltro===cat) ? null : cat;
   renderSolicListaFixa();
 }
+
 
 function abrirNovaSolic(){
   ['solic-nome','solic-evento','solic-local'].forEach(function(id){document.getElementById(id).value='';});
