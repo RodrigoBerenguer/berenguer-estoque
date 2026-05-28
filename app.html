@@ -361,7 +361,18 @@
 
       <!-- SOLICITAÇÕES -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px">
-        <div class="section-title" style="margin-bottom:10px">📋 Solicitações Pendentes</div>
+        <div class="section-title" style="margin-bottom:10px">📋 Solicitações</div>
+        <!-- Abas Pendentes / Histórico -->
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <button id="solic-tab-pend" onclick="setSolicTab('pendentes')"
+            style="flex:1;padding:7px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#0d0f14;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;letter-spacing:.5px;cursor:pointer">
+            Pendentes
+          </button>
+          <button id="solic-tab-hist" onclick="setSolicTab('historico')"
+            style="flex:1;padding:7px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;letter-spacing:.5px;cursor:pointer">
+            Histórico
+          </button>
+        </div>
         <select class="form-input" id="imp-solic-sel" onchange="renderPreviewFromSolic()">
           <option value="">Escolha uma solicitação...</option>
         </select>
@@ -3581,17 +3592,8 @@ function copiarCarregamentos(){
 
 function initImprimir(){
   initImpPaEvs();
-  // popular solicitações pendentes
-  var selSolic=document.getElementById('imp-solic-sel');
-  var prevSolic=selSolic.value;
-  var solicPend=SOLICS.filter(function(s){return s.status==='solicitado';});
-  selSolic.innerHTML='<option value="">Escolha uma solicitação...</option>'+
-    solicPend.map(function(s){
-      var df=s.data?new Date(s.data+'T12:00:00').toLocaleDateString('pt-BR'):'—';
-      return '<option value="'+s.id+'">'+s.evento+' — '+s.nome+' ('+df+')</option>';
-    }).join('');
-  if(!solicPend.length) selSolic.innerHTML='<option value="">Nenhuma solicitação pendente</option>';
-  if(prevSolic) selSolic.value=prevSolic;
+  // popular solicitações conforme aba ativa (pendentes ou histórico)
+  popularSolicSelector();
 
   // popular eventos
   var selEv=document.getElementById('imp-ev-sel');
@@ -3748,6 +3750,59 @@ function copiarTexto(txt, btn){
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(txt).then(onOk).catch(function(){usarFallback(txt,onOk);});
   } else { usarFallback(txt,onOk); }
+}
+
+
+// ── ABAS DE SOLICITAÇÃO NA IMPRESSÃO ─────────────────────────
+var solicTabAtiva = 'pendentes';
+
+function setSolicTab(tab){
+  solicTabAtiva = tab;
+  var btnPend = document.getElementById('solic-tab-pend');
+  var btnHist = document.getElementById('solic-tab-hist');
+  if(!btnPend || !btnHist) return;
+  if(tab === 'pendentes'){
+    btnPend.style.background = 'var(--accent)';
+    btnPend.style.color = '#0d0f14';
+    btnPend.style.borderColor = 'var(--accent)';
+    btnHist.style.background = 'transparent';
+    btnHist.style.color = 'var(--text2)';
+    btnHist.style.borderColor = 'var(--border)';
+  } else {
+    btnHist.style.background = 'var(--accent)';
+    btnHist.style.color = '#0d0f14';
+    btnHist.style.borderColor = 'var(--accent)';
+    btnPend.style.background = 'transparent';
+    btnPend.style.color = 'var(--text2)';
+    btnPend.style.borderColor = 'var(--border)';
+  }
+  popularSolicSelector();
+  // Limpar preview ao trocar aba
+  var prev = document.getElementById('imp-preview');
+  if(prev) prev.innerHTML = '';
+}
+
+function popularSolicSelector(){
+  var sel = document.getElementById('imp-solic-sel');
+  if(!sel) return;
+  var lista;
+  if(solicTabAtiva === 'pendentes'){
+    lista = SOLICS.filter(function(s){ return s.status === 'solicitado'; });
+  } else {
+    // Histórico: todas que já foram importadas/carregadas, mais recentes primeiro
+    lista = SOLICS.filter(function(s){ return s.status !== 'solicitado'; })
+                  .slice().reverse();
+  }
+  if(!lista.length){
+    sel.innerHTML = '<option value="">'+(solicTabAtiva==='pendentes'?'Nenhuma solicitação pendente':'Nenhuma solicitação no histórico')+'</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Escolha uma solicitação...</option>' +
+    lista.map(function(s){
+      var df = s.data ? new Date(s.data+'T12:00:00').toLocaleDateString('pt-BR') : '—';
+      var status = s.status === 'solicitado' ? '' : ' ✓';
+      return '<option value="'+s.id+'">'+s.evento+' — '+s.nome+' ('+df+')'+status+'</option>';
+    }).join('');
 }
 
 // ── IMPRIMIR SOLICITACAO ─────────────────────────────────────
