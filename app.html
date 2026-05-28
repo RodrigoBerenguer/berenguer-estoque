@@ -3573,26 +3573,49 @@ function renderPreviewCgEscolhido(){
   html+='<div style="font-size:13px;margin-top:4px">Evento: <strong>'+ev.nome+'</strong></div>';
   html+='<div style="font-size:12px;color:#555;margin-top:2px">'+dia+' as '+hora+' | Total: '+cg.total+' itens</div>';
   html+='</div>';
-  // Ordenar materiais do carregamento por categoria e nome
-  var cgMats = cg.materiais||[];
-  // Buscar categoria pelo nome do item no CAT
+  // Buscar categoria pelo nome ou id do item no CAT
   function getCatByNome(nome){
     var found = CAT.find(function(c){return c.nome===nome;});
     return found ? found.cat : 'Outros';
   }
+  function getCatById(id){
+    var found = CAT.find(function(c){return c.id===id;});
+    return found ? found.cat : 'Outros';
+  }
+
+  // Montar lista completa: snapshot do carregamento + materiais de ev.materiais com este cgId
+  // (garante que insumos carregados separadamente também aparecem)
+  var snapNomes = (cg.materiais||[]).map(function(m){return m.nome;});
+  var cgMats = (cg.materiais||[]).slice(); // começa com o snapshot
+
+  // Adicionar itens de ev.materiais com este carregamentoId que não estão no snapshot
+  (ev.materiais||[]).forEach(function(mat){
+    if(mat.carregamentoId !== cg.id) return;
+    if(snapNomes.indexOf(mat.nome) >= 0) return; // já está no snapshot
+    var qtd = isInsumo(mat.itemId) ? (mat.qtdSaida||0) : (mat.patsaida&&mat.patsaida.length?mat.patsaida.length:(mat.qtdSaida||0));
+    cgMats.push({
+      nome: mat.nome,
+      qtd: qtd,
+      pats: mat.patsaida||[]
+    });
+  });
+
   var cgSort = sortItensPrint(cgMats,
     function(m){return m.nome;},
     function(m){return getCatByNome(m.nome);}
   );
   html += renderTabelaAgrupada(cgSort.grupos, cgSort.ordem,
     function(m, n){
-      var pats = m.pats&&m.pats.length ? m.pats.join(', ') : '—';
+      var temPat = m.pats && m.pats.length > 0;
       var bg = n%2===0?'#f5f5f5':'#fff';
+      var patCol = temPat
+        ? '<span style="font-size:11px;color:#555">'+m.pats.join(', ')+'</span>'
+        : '<span style="color:#aaa;font-style:italic;font-size:11px">Sem patrimônio</span>';
       return '<tr style="background:'+bg+'">'+
         '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+n+'</td>'+
         '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+m.nome+'</td>'+
         '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;font-weight:bold">'+m.qtd+'</td>'+
-        '<td style="padding:5px 8px;border-bottom:1px solid #ddd;font-size:11px;color:#555">'+pats+'</td>'+
+        '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+patCol+'</td>'+
       '</tr>';
     },
     [{label:'#'},{label:'Material'},{label:'Qtd',center:true},{label:'Patrimônios'}]
