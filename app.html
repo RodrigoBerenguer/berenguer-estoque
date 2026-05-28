@@ -621,30 +621,21 @@
     <div class="form-group"><label class="form-label">Data pra Entrega</label><input class="form-input" type="date" id="solic-data"></div>
     <div class="divider"></div>
     <div class="form-label" style="margin-bottom:8px">Itens Solicitados</div>
-    <!-- itens selecionados -->
-    <div id="solic-itens-lista" style="margin-bottom:12px"></div>
-    <!-- MATERIAIS COM PATRIMÔNIO -->
-    <div style="margin-bottom:10px">
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);margin-bottom:6px;font-weight:600">🔌 Cabos e Quadros</div>
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px">
-        <div class="swrap" style="margin-bottom:8px">
-          <span class="sicon">🔍</span>
-          <input class="mat-busca-input" id="solic-busca" placeholder="Buscar em Cabos e Quadros..." oninput="filtrarSolicMat()">
-        </div>
-        <div id="solic-mat-lista" style="max-height:200px;overflow-y:auto"></div>
-      </div>
-    </div>
-    <!-- INSUMOS / EPI / ATERRAMENTO -->
-    <div>
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);margin-bottom:6px;font-weight:600">📦 Insumos</div>
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px">
-        <div class="swrap" style="margin-bottom:8px">
-          <span class="sicon">🔍</span>
-          <input class="mat-busca-input" id="solic-busca-ins" placeholder="Buscar em Insumos..." oninput="filtrarSolicIns()">
-        </div>
-        <div id="solic-ins-lista" style="max-height:200px;overflow-y:auto"></div>
-      </div>
-    </div>
+    <!-- resumo dos itens selecionados -->
+    <div id="solic-itens-lista" style="margin-bottom:10px"></div>
+
+    <!-- chips de categoria -->
+    <div id="solic-cat-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+
+    <!-- lista fixa de todos os itens -->
+    <div id="solic-lista-fixa" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px"></div>
+
+    <!-- inputs ocultos mantidos para compatibilidade -->
+    <input type="hidden" id="solic-busca">
+    <input type="hidden" id="solic-busca-ins">
+    <div id="solic-mat-lista" style="display:none"></div>
+    <div id="solic-ins-lista" style="display:none"></div>
+
     <div class="row2" style="margin-top:8px">
       <button class="btn btn-ghost" onclick="fechar('ov-solic')">Cancelar</button>
       <button class="btn btn-primary" style="margin-bottom:0" onclick="salvarSolic()">Enviar Solicitação 📋</button>
@@ -2235,16 +2226,121 @@ function excluirSolic(id){
   if(i>=0){SOLICS.splice(i,1);salvar();renderSolics();renderEv();toast('Solicitação excluída');}
 }
 
+
+// ── LISTA FIXA DE SOLICITAÇÃO ─────────────────────────────────
+var solicCatFiltro = null; // null = todas as categorias
+
+function renderSolicListaFixa(){
+  var chips = document.getElementById('solic-cat-chips');
+  var lista = document.getElementById('solic-lista-fixa');
+  if(!chips || !lista) return;
+
+  // Montar lista completa do catálogo ordenada
+  var todos = CAT.slice().sort(function(a,b){
+    var ca = a.cat||''; var cb = b.cat||'';
+    var cmp = ca.localeCompare(cb,'pt',{sensitivity:'base'});
+    if(cmp!==0) return cmp;
+    return a.nome.localeCompare(b.nome,'pt',{numeric:true,sensitivity:'base'});
+  });
+
+  // Extrair categorias únicas na ordem de aparição
+  var cats = [];
+  todos.forEach(function(c){ if(cats.indexOf(c.cat)<0) cats.push(c.cat); });
+
+  // Renderizar chips de categoria
+  chips.innerHTML = cats.map(function(cat){
+    var ativo = solicCatFiltro===cat;
+    return '<button onclick="setSolicCatFiltro(''+cat.replace(/'/g,"\'")+'')" style="'+
+      'padding:5px 10px;border-radius:16px;border:1px solid '+(ativo?'var(--accent)':'var(--border)')+';'+
+      'background:'+(ativo?'var(--accent)':'transparent')+';'+
+      'color:'+(ativo?'#0d0f14':'var(--text2)')+';'+
+      'font-family:Rajdhani,sans-serif;font-weight:700;font-size:11px;letter-spacing:.5px;'+
+      'cursor:pointer;white-space:nowrap">'+cat+'</button>';
+  }).join('');
+
+  // Filtrar por categoria se chip selecionado
+  var filtrados = solicCatFiltro
+    ? todos.filter(function(c){return c.cat===solicCatFiltro;})
+    : todos;
+
+  // Agrupar por categoria
+  var grupos = {}; var ordem = [];
+  filtrados.forEach(function(c){
+    if(!grupos[c.cat]){grupos[c.cat]=[];ordem.push(c.cat);}
+    grupos[c.cat].push(c);
+  });
+
+  if(!filtrados.length){
+    lista.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:var(--text3)">Nenhum item encontrado</div>';
+    return;
+  }
+
+  var html = '';
+  ordem.forEach(function(cat){
+    // cabeçalho de categoria
+    html += '<div style="padding:7px 14px;font-size:10px;font-family:Rajdhani,sans-serif;font-weight:700;'+
+      'letter-spacing:1px;text-transform:uppercase;color:var(--text3);'+
+      'background:var(--bg);border-bottom:1px solid var(--border)">'+cat+'</div>';
+
+    grupos[cat].forEach(function(c){
+      var disp = disponivelReal(c.id);
+      var zerado = disp <= 0;
+      var ex = solicItensTemp.find(function(x){return x.itemId===c.id;});
+      var qty = ex ? ex.qty : 0;
+      var cor = zerado ? 'var(--red)' : 'var(--green)';
+      var dispLabel = zerado ? 'Indisponível' : 'Disp: '+disp;
+
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;'+
+        'padding:10px 14px;border-bottom:1px solid var(--border);'+
+        'background:'+(qty>0?'rgba(240,192,64,.04)':'transparent')+'">'+
+
+        // nome + disponível
+        '<div style="flex:1;min-width:0;margin-right:10px">'+
+          '<div style="font-size:13px;font-weight:'+(qty>0?'600':'400')+';color:var(--text);'+
+            'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+c.nome+'</div>'+
+          '<div style="font-size:11px;color:'+cor+';margin-top:1px">'+dispLabel+'</div>'+
+        '</div>'+
+
+        // controles +/-
+        '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'+
+          (qty>0
+            ? '<button onclick="solicQtyDireto(''+c.id+'','-1',''+c.nome.replace(/'/g,"\'")+'')" '+
+                'style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);'+
+                'background:var(--surface);color:var(--text);font-size:16px;cursor:pointer;'+
+                'display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-weight:700">−</button>'+
+              '<span style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:15px;'+
+                'color:var(--accent);min-width:20px;text-align:center">'+qty+'</span>'
+            : '')+
+          '<button onclick="solicQtyDireto(''+c.id+'','1',''+c.nome.replace(/'/g,"\'")+'')" '+
+            (zerado ? 'disabled ' : '')+
+            'style="width:28px;height:28px;border-radius:6px;'+
+            'border:1px solid '+(zerado?'var(--border)':'rgba(240,192,64,.4)')+';'+
+            'background:'+(zerado?'var(--surface2)':'rgba(240,192,64,.1)')+';'+
+            'color:'+(zerado?'var(--text3)':'var(--accent)')+';'+
+            'font-size:16px;cursor:'+(zerado?'not-allowed':'pointer')+';'+
+            'display:flex;align-items:center;justify-content:center;'+
+            'font-family:Rajdhani,sans-serif;font-weight:700;opacity:'+(zerado?'.4':'1')+'">'+(zerado?'−':'+')+'</button>'+
+        '</div>'+
+      '</div>';
+    });
+  });
+
+  lista.innerHTML = html;
+}
+
+function setSolicCatFiltro(cat){
+  solicCatFiltro = (solicCatFiltro===cat) ? null : cat; // toggle
+  renderSolicListaFixa();
+}
+
 function abrirNovaSolic(){
   ['solic-nome','solic-evento','solic-local'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('solic-data').value='';
   solicItensTemp=[];
+  solicCatFiltro=null;
   renderSolicItensTemp();
   abrir('ov-solic');
-  setTimeout(function(){
-    filtrarSolicMat();
-    filtrarSolicIns();
-  },100);
+  setTimeout(function(){ renderSolicListaFixa(); }, 100);
 }
 
 function renderSolicItensTemp(){
@@ -2284,8 +2380,13 @@ function renderSolicItensTemp(){
 function ajustarSolicQty(idx,delta){
   solicItensTemp[idx].qty=Math.max(1,solicItensTemp[idx].qty+delta);
   renderSolicItensTemp();
+  renderSolicListaFixa();
 }
-function remSolicItem(idx){solicItensTemp.splice(idx,1);renderSolicItensTemp();}
+function remSolicItem(idx){
+  solicItensTemp.splice(idx,1);
+  renderSolicItensTemp();
+  renderSolicListaFixa();
+}
 
 function abrirAddSolicItem(){
   var area=document.getElementById('solic-add-area');
@@ -2308,7 +2409,7 @@ function solicQtyDireto(itemId, delta, nome){
     if(ex.qty<=0) solicItensTemp=solicItensTemp.filter(function(x){return x.itemId!==itemId;});
   }
   renderSolicItensTemp();
-  filtrarSolicMat();
+  renderSolicListaFixa();
 }
 
 function filtrarSolicMat(){
