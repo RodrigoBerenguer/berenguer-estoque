@@ -3514,6 +3514,42 @@ function renderPreviewCarregamentos(){
   container.innerHTML='';
 }
 
+
+// ── HELPER: ordenar e agrupar itens por categoria para impressão ──
+function sortItensPrint(itens, getNome, getCat){
+  // Agrupa e ordena: categoria alfabética, itens alfabéticos dentro do grupo
+  var grupos={}, ordem=[];
+  itens.forEach(function(it){
+    var cat = getCat(it) || 'Outros';
+    if(!grupos[cat]){grupos[cat]=[];ordem.push(cat);}
+    grupos[cat].push(it);
+  });
+  ordem.sort(function(a,b){return a.localeCompare(b,'pt',{sensitivity:'base'});});
+  ordem.forEach(function(cat){
+    grupos[cat].sort(function(a,b){
+      return getNome(a).localeCompare(getNome(b),'pt',{numeric:true,sensitivity:'base'});
+    });
+  });
+  return {grupos:grupos, ordem:ordem};
+}
+
+function renderTabelaAgrupada(grupos, ordem, renderLinha, colunas){
+  var html = '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">';
+  html += '<thead><tr>'+colunas.map(function(c){
+    return '<th style="background:#111;color:#fff;padding:5px 8px;text-align:'+(c.center?'center':'left')+'">'+c.label+'</th>';
+  }).join('')+'</tr></thead><tbody>';
+  var n = 1;
+  ordem.forEach(function(cat){
+    // Cabeçalho de categoria
+    html += '<tr><td colspan="'+colunas.length+'" style="background:#e8e8e8;padding:5px 8px;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#333;border-bottom:1px solid #ccc">'+cat+'</td></tr>';
+    grupos[cat].forEach(function(it){
+      html += renderLinha(it, n++);
+    });
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
 function renderPreviewCgEscolhido(){
   var evId=document.getElementById('imp-cg-sel').value;
   var cgIdx=document.getElementById('imp-cg-idx').value;
@@ -3537,22 +3573,30 @@ function renderPreviewCgEscolhido(){
   html+='<div style="font-size:13px;margin-top:4px">Evento: <strong>'+ev.nome+'</strong></div>';
   html+='<div style="font-size:12px;color:#555;margin-top:2px">'+dia+' as '+hora+' | Total: '+cg.total+' itens</div>';
   html+='</div>';
-  html+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
-  html+='<thead><tr>'+
-    '<th style="background:#111;color:#fff;padding:5px 8px;text-align:left">#</th>'+
-    '<th style="background:#111;color:#fff;padding:5px 8px;text-align:left">Material</th>'+
-    '<th style="background:#111;color:#fff;padding:5px 8px;text-align:center">Qtd</th>'+
-    '<th style="background:#111;color:#fff;padding:5px 8px;text-align:left">Patrimonios</th>'+
-  '</tr></thead><tbody>';
-  (cg.materiais||[]).forEach(function(m,i){
-    html+='<tr style="background:'+(i%2===0?'#fff':'#f5f5f5')+'">'+
-      '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+(i+1)+'</td>'+
-      '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+m.nome+'</td>'+
-      '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;font-weight:bold">'+m.qtd+'</td>'+
-      '<td style="padding:5px 8px;border-bottom:1px solid #ddd;font-size:11px;color:#555">'+(m.pats&&m.pats.length?m.pats.join(', '):'—')+'</td>'+
-    '</tr>';
-  });
-  html+='</tbody></table>';
+  // Ordenar materiais do carregamento por categoria e nome
+  var cgMats = cg.materiais||[];
+  // Buscar categoria pelo nome do item no CAT
+  function getCatByNome(nome){
+    var found = CAT.find(function(c){return c.nome===nome;});
+    return found ? found.cat : 'Outros';
+  }
+  var cgSort = sortItensPrint(cgMats,
+    function(m){return m.nome;},
+    function(m){return getCatByNome(m.nome);}
+  );
+  html += renderTabelaAgrupada(cgSort.grupos, cgSort.ordem,
+    function(m, n){
+      var pats = m.pats&&m.pats.length ? m.pats.join(', ') : '—';
+      var bg = n%2===0?'#f5f5f5':'#fff';
+      return '<tr style="background:'+bg+'">'+
+        '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+n+'</td>'+
+        '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+m.nome+'</td>'+
+        '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;font-weight:bold">'+m.qtd+'</td>'+
+        '<td style="padding:5px 8px;border-bottom:1px solid #ddd;font-size:11px;color:#555">'+pats+'</td>'+
+      '</tr>';
+    },
+    [{label:'#'},{label:'Material'},{label:'Qtd',center:true},{label:'Patrimônios'}]
+  );
   html+='<div style="margin-top:16px;padding-top:10px;border-top:1px solid #ddd;font-size:11px;color:#888">Gerado em '+new Date().toLocaleString('pt-BR')+'</div>';
   html+='</div>';
   container.innerHTML=html;
@@ -3828,12 +3872,25 @@ function renderPreviewSolic(solicId){
   html += '</table>';
   html += '<div style="font-weight:bold;font-size:13px;margin-bottom:8px;border-top:1px solid #ddd;padding-top:10px">MATERIAIS SOLICITADOS</div>';
   if(s.itens && s.itens.length){
-    html += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
-    html += '<thead><tr><th style="background:#111;color:#fff;padding:5px 8px;text-align:left">#</th><th style="background:#111;color:#fff;padding:5px 8px;text-align:left">Material</th><th style="background:#111;color:#fff;padding:5px 8px;text-align:center">Qtd</th></tr></thead><tbody>';
-    s.itens.forEach(function(it,i){
-      html += '<tr style="background:'+(i%2===0?'#fff':'#f5f5f5')+'"><td style="padding:5px 8px;border-bottom:1px solid #ddd">'+(i+1)+'</td><td style="padding:5px 8px;border-bottom:1px solid #ddd">'+it.nome+'</td><td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;font-weight:bold">'+it.qty+'</td></tr>';
-    });
-    html += '</tbody></table>';
+    // Ordenar itens da solicitação por categoria e nome
+    var sSorted = sortItensPrint(s.itens,
+      function(it){return it.nome;},
+      function(it){
+        var found = CAT.find(function(c){return c.id===it.itemId||c.nome===it.nome;});
+        return found ? found.cat : 'Outros';
+      }
+    );
+    html += renderTabelaAgrupada(sSorted.grupos, sSorted.ordem,
+      function(it, n){
+        var bg = n%2===0?'#f5f5f5':'#fff';
+        return '<tr style="background:'+bg+'">'+
+          '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+n+'</td>'+
+          '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+it.nome+'</td>'+
+          '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;font-weight:bold">'+it.qty+'</td>'+
+        '</tr>';
+      },
+      [{label:'#'},{label:'Material'},{label:'Qtd',center:true}]
+    );
   } else {
     html += '<p style="color:#999;font-size:12px">Nenhum item.</p>';
   }
@@ -3945,48 +4002,55 @@ function renderPreview(evIdParam){
   // Tabela saída
   var tSaida='<p style="color:#999;font-size:12px;font-style:italic">Nenhum material.</p>';
   if(ev.materiais.length){
-    tSaida='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">'+
-      '<thead><tr>'+
-        '<th style="background:#111;color:#fff;padding:5px 8px;text-align:left">#</th>'+
-        '<th style="background:#111;color:#fff;padding:5px 8px;text-align:left">Material</th>'+
-        '<th style="background:#111;color:#fff;padding:5px 8px;text-align:center">Qtd</th>'+
-        '<th style="background:#111;color:#fff;padding:5px 8px;text-align:left">Patrimônios</th>'+
-      '</tr></thead><tbody>'+
-      ev.materiais.map(function(mat,i){
+    var evSort = sortItensPrint(ev.materiais,
+      function(m){return m.nome;},
+      function(m){
+        var found = CAT.find(function(c){return c.id===m.itemId;});
+        return found ? found.cat : 'Outros';
+      }
+    );
+    tSaida = renderTabelaAgrupada(evSort.grupos, evSort.ordem,
+      function(mat, n){
         var qtd=isInsumo(mat.itemId)?(mat.qtdSaida||0):(mat.patsaida&&mat.patsaida.length?mat.patsaida.length:(mat.qtdSaida||0));
         var pats=mat.patsaida&&mat.patsaida.length?mat.patsaida.join(', '):'—';
-        return '<tr style="background:'+(i%2===0?'#fff':'#f5f5f5')+'">'+
-          '<td style="padding:5px 8px;border-bottom:1px solid #ddd;color:#333">'+(i+1)+'</td>'+
+        var bg = n%2===0?'#f5f5f5':'#fff';
+        return '<tr style="background:'+bg+'">'+
+          '<td style="padding:5px 8px;border-bottom:1px solid #ddd;color:#333">'+n+'</td>'+
           '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+mat.nome+'</td>'+
           '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;font-weight:bold">'+qtd+'</td>'+
           '<td style="padding:5px 8px;border-bottom:1px solid #ddd;color:#555;font-size:11px">'+pats+'</td>'+
         '</tr>';
-      }).join('')+'</tbody></table>';
+      },
+      [{label:'#'},{label:'Material'},{label:'Qtd',center:true},{label:'Patrimônios'}]
+    );
   }
 
   // Tabela retorno
   var tRetorno='<p style="color:#999;font-size:12px;font-style:italic">Nenhum material.</p>';
   if(ev.materiais.length){
-    tRetorno='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">'+
-      '<thead><tr>'+
-        '<th style="background:#111;color:#fff;padding:5px 8px;text-align:left">Material</th>'+
-        '<th style="background:#111;color:#fff;padding:5px 8px;text-align:center">Saiu</th>'+
-        '<th style="background:#111;color:#fff;padding:5px 8px;text-align:center">Voltou</th>'+
-        '<th style="background:#111;color:#fff;padding:5px 8px;text-align:center">Pendente</th>'+
-        '<th style="background:#111;color:#fff;padding:5px 8px;text-align:left">Patrimônios Pendentes</th>'+
-      '</tr></thead><tbody>'+
-      ev.materiais.map(function(mat,i){
+    var retSort = sortItensPrint(ev.materiais,
+      function(m){return m.nome;},
+      function(m){
+        var found = CAT.find(function(c){return c.id===m.itemId;});
+        return found ? found.cat : 'Outros';
+      }
+    );
+    tRetorno = renderTabelaAgrupada(retSort.grupos, retSort.ordem,
+      function(mat, n){
         var saida=mat.patsaida||[];
         var retorno=mat.patRetorno||[];
         var pend=saida.filter(function(p){return retorno.indexOf(p)<0;});
-        return '<tr style="background:'+(i%2===0?'#fff':'#f5f5f5')+'">'+
+        var bg = n%2===0?'#f5f5f5':'#fff';
+        return '<tr style="background:'+bg+'">'+
           '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+mat.nome+'</td>'+
           '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center">'+saida.length+'</td>'+
           '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;color:green">'+retorno.length+'</td>'+
           '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;'+(pend.length?'color:red;font-weight:bold':'')+'">'+(pend.length||'—')+'</td>'+
           '<td style="padding:5px 8px;border-bottom:1px solid #ddd;font-size:11px;color:#555">'+(pend.length?pend.join(', '):'—')+'</td>'+
         '</tr>';
-      }).join('')+'</tbody></table>';
+      },
+      [{label:'Material'},{label:'Saiu',center:true},{label:'Voltou',center:true},{label:'Pendente',center:true},{label:'Patrimônios Pendentes'}]
+    );
   }
 
   // Resumo
