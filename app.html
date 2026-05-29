@@ -4233,40 +4233,40 @@ function renderPreview(evIdParam){
     '<div id="print-area" class="imp-doc" style="background:#fff;color:#000;border-radius:10px;border:1px solid #ddd;font-family:Arial,sans-serif;overflow:hidden">'+
 
       // Cabeçalho escuro estilo Berenguer
-      '<div class="doc-header" style="background:#1a1d27;padding:16px 20px;page-break-inside:avoid">'+
+      '<div class="doc-header" style="background:#fff;padding:16px 20px;border-bottom:2px solid #1a1d27;page-break-inside:avoid">'+
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">'+
           '<div>'+
-            '<div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:4px">Controle de Estoque</div>'+
-            '<div style="font-size:20px;font-weight:bold;letter-spacing:1px;color:#fff">BERENGUER</div>'+
+            '<div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:2px">Controle de Estoque</div>'+
+            '<div style="font-size:22px;font-weight:bold;letter-spacing:1px;color:#1a1d27">BERENGUER</div>'+
           '</div>'+
-          '<div style="background:'+stColor+';color:#fff;font-size:10px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;padding:4px 10px;border-radius:4px;margin-top:4px">'+
+          '<div style="border:2px solid '+stColor+';color:'+stColor+';font-size:10px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;padding:4px 10px;border-radius:4px;margin-top:4px">'+
             (statusLabel[ev.status]||ev.status)+
           '</div>'+
         '</div>'+
-        // Info do evento
-        '<div style="background:rgba(255,255,255,.06);border-radius:6px;padding:10px 12px;font-size:11px;color:#ccc;line-height:2">'+
-          '<strong style="color:#c9a227">Evento:</strong> '+ev.nome+'<br>'+
-          '<strong style="color:#c9a227">Data:</strong> '+df+
-          (ev.local?' &nbsp;|&nbsp; <strong style="color:#c9a227">Local:</strong> '+ev.local:'')+
-          (ev.responsavel?'<br><strong style="color:#c9a227">Responsável:</strong> '+ev.responsavel:'')+
-          (ev.transporte?' &nbsp;|&nbsp; <strong style="color:#c9a227">Transporte:</strong> '+ev.transporte:'')+
+        // Info do evento — sem fundo
+        '<div style="border-left:3px solid #c9a227;padding:8px 12px;font-size:11px;color:#333;line-height:2;margin-bottom:10px">'+
+          '<strong>Evento:</strong> '+ev.nome+'<br>'+
+          '<strong>Data:</strong> '+df+
+          (ev.local?' &nbsp;|&nbsp; <strong>Local:</strong> '+ev.local:'')+
+          (ev.responsavel?'<br><strong>Responsável:</strong> '+ev.responsavel:'')+
+          (ev.transporte?' &nbsp;|&nbsp; <strong>Transporte:</strong> '+ev.transporte:'')+
         '</div>'+
-        // Mini stats
-        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px">'+
-          '<div style="background:rgba(255,255,255,.06);border-radius:6px;padding:8px;text-align:center">'+
-            '<div style="font-size:22px;font-weight:bold;color:#c9a227">'+tot+'</div>'+
+        // Mini stats — borda simples sem fundo
+        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+
+          '<div style="border:1px solid #ddd;border-radius:6px;padding:8px;text-align:center">'+
+            '<div style="font-size:22px;font-weight:bold;color:#1a1d27">'+tot+'</div>'+
             '<div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px">Enviados</div>'+
           '</div>'+
-          '<div style="background:rgba(255,255,255,.06);border-radius:6px;padding:8px;text-align:center">'+
-            '<div style="font-size:22px;font-weight:bold;color:#2ecc8a">'+ret+'</div>'+
+          '<div style="border:1px solid #ddd;border-radius:6px;padding:8px;text-align:center">'+
+            '<div style="font-size:22px;font-weight:bold;color:#1a6b47">'+ret+'</div>'+
             '<div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px">Voltaram</div>'+
           '</div>'+
-          '<div style="background:rgba(255,255,255,.06);border-radius:6px;padding:8px;text-align:center">'+
-            '<div style="font-size:22px;font-weight:bold;color:'+(falt>0?'#ff4d6d':'#2ecc8a')+'">'+falt+'</div>'+
+          '<div style="border:1px solid #ddd;border-radius:6px;padding:8px;text-align:center">'+
+            '<div style="font-size:22px;font-weight:bold;color:'+(falt>0?'#c00':'#1a6b47')+'">'+falt+'</div>'+
             '<div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px">Pendentes</div>'+
           '</div>'+
-          '<div style="background:rgba(255,255,255,.06);border-radius:6px;padding:8px;text-align:center">'+
-            '<div style="font-size:22px;font-weight:bold;color:#fff">'+pct+'%</div>'+
+          '<div style="border:1px solid #ddd;border-radius:6px;padding:8px;text-align:center">'+
+            '<div style="font-size:22px;font-weight:bold;color:#1a1d27">'+pct+'%</div>'+
             '<div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px">Retorno</div>'+
           '</div>'+
         '</div>'+
