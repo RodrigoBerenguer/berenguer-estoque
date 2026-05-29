@@ -3619,7 +3619,7 @@ function renderTabelaAgrupada(grupos, ordem, renderLinha, colunas){
   var n = 1;
   ordem.forEach(function(cat){
     // Cabeçalho de categoria
-    html += '<tr><td colspan="'+colunas.length+'" style="background:#e8e8e8;padding:5px 8px;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#333;border-bottom:1px solid #ccc">'+cat+'</td></tr>';
+    html += '<tr class="cat-header" style="page-break-after:avoid"><td colspan="'+colunas.length+'" style="background:#e8e8e8;padding:5px 8px;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#333;border-bottom:1px solid #ccc">'+cat+'</td></tr>';
     grupos[cat].forEach(function(it){
       html += renderLinha(it, n++);
     });
@@ -4063,12 +4063,27 @@ function imprimirPreview(){
     'body{font-family:Arial,sans-serif;margin:10mm;background:#fff;color:#000}'+
     'table{border-collapse:collapse;width:100%}'+
     'th,td{padding:5px 8px;font-size:12px}'+
+    /* Evitar que linhas de tabela quebrem no meio */
+    'tr{page-break-inside:avoid}'+
+    /* Cabeçalho de categoria nunca fica sozinho no fim da página */
+    'tr.cat-header{page-break-after:avoid}'+
+    /* Títulos de seção ficam com o conteúdo seguinte */
+    '.sec-title{page-break-after:avoid;page-break-inside:avoid}'+
+    /* Bloco de cabeçalho escuro nunca quebra */
+    '.doc-header{page-break-inside:avoid}'+
+    /* Tabela não quebra deixando cabeçalho órfão */
+    'thead{display:table-header-group}'+
     '@media print{'+
       'body{margin:5mm}'+
+      'tr{page-break-inside:avoid}'+
+      'thead{display:table-header-group}'+
+      'th{page-break-after:avoid}'+
+      /* Preservar cores escuras */
       '[style*="background:#1a1d27"]{background:#1a1d27!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
       '[style*="background:rgba(255,255,255,.06)"]{background:rgba(255,255,255,.06)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
       '[style*="background:#111"]{background:#111!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
       '[style*="background:#e8e8e8"]{background:#e8e8e8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+      '[style*="background:#c00"]{background:#c00!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
     '}'+
     '</style>'+
     '</head><body>'+area.innerHTML+'</body></html>');
@@ -4205,7 +4220,7 @@ function renderPreview(evIdParam){
 
   // ── Seção helper ────────────────────────────────────────────
   function secTitle(n, label, color){
-    return '<div style="background:'+(color||'#1a1d27')+';color:#fff;padding:7px 12px;font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;margin:18px 0 0;border-radius:4px 4px 0 0">'+n+'. '+label+'</div>';
+    return '<div class="sec-title" style="background:'+(color||'#1a1d27')+';color:#fff;padding:7px 12px;font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;margin:18px 0 0;border-radius:4px 4px 0 0;page-break-after:avoid;page-break-inside:avoid">'+n+'. '+label+'</div>';
   }
 
   container.innerHTML=
@@ -4218,7 +4233,7 @@ function renderPreview(evIdParam){
     '<div id="print-area" class="imp-doc" style="background:#fff;color:#000;border-radius:10px;border:1px solid #ddd;font-family:Arial,sans-serif;overflow:hidden">'+
 
       // Cabeçalho escuro estilo Berenguer
-      '<div style="background:#1a1d27;padding:16px 20px">'+
+      '<div class="doc-header" style="background:#1a1d27;padding:16px 20px;page-break-inside:avoid">'+
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">'+
           '<div>'+
             '<div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:4px">Controle de Estoque</div>'+
