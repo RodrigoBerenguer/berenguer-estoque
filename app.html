@@ -4164,10 +4164,24 @@ function renderPreview(evIdParam){
     );
     tRetorno = renderTabelaAgrupada(retSort.grupos, retSort.ordem,
       function(mat, n){
+        var bg = n%2===0?'#f5f5f5':'#fff';
+        if(isInsumo(mat.itemId)){
+          // Insumos: controle por quantidade
+          var qs = mat.qtdSaida||0;
+          var qr = mat.qtdRetorno||0;
+          var qp = Math.max(0, qs-qr);
+          return '<tr style="background:'+bg+'">'+
+            '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+mat.nome+'</td>'+
+            '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center">'+qs+'</td>'+
+            '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;color:green">'+qr+'</td>'+
+            '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;'+(qp>0?'color:red;font-weight:bold':'')+'">'+(qp||'—')+'</td>'+
+            '<td style="padding:5px 8px;border-bottom:1px solid #ddd;font-size:11px;color:#aaa;font-style:italic">Sem patrimônio</td>'+
+          '</tr>';
+        }
+        // Patrimônio: controle por PATs
         var saida=mat.patsaida||[];
         var retorno=mat.patRetorno||[];
         var pend=saida.filter(function(p){return retorno.indexOf(p)<0;});
-        var bg = n%2===0?'#f5f5f5':'#fff';
         return '<tr style="background:'+bg+'">'+
           '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+mat.nome+'</td>'+
           '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center">'+saida.length+'</td>'+
@@ -4192,26 +4206,39 @@ function renderPreview(evIdParam){
   // Pendências detalhadas
   var tPend='';
   var matsPend=ev.materiais.filter(function(mat){
+    if(isInsumo(mat.itemId)){
+      return Math.max(0,(mat.qtdSaida||0)-(mat.qtdRetorno||0)) > 0;
+    }
     var s=mat.patsaida||[], r=mat.patRetorno||[];
     return s.filter(function(p){return r.indexOf(p)<0;}).length>0;
   });
   if(matsPend.length){
-    tPend='<div style="margin-top:16px"><div style="font-family:Arial;font-weight:bold;font-size:13px;text-transform:uppercase;letter-spacing:.5px;padding:4px 0;border-bottom:2px solid #000;margin-bottom:8px;color:#000">4. Itens com Pendência</div>'+
+    tPend='<div style="margin-top:16px">'+secTitle(4,'Itens com Pendência','#c00')+
+      '<div style="border:1px solid #ddd;border-top:none;border-radius:0 0 4px 4px;overflow:hidden">'+
       '<table style="width:100%;border-collapse:collapse;font-size:12px">'+
       '<thead><tr>'+
         '<th style="background:#c00;color:#fff;padding:5px 8px;text-align:left">Material</th>'+
         '<th style="background:#c00;color:#fff;padding:5px 8px;text-align:center">Pendente</th>'+
-        '<th style="background:#c00;color:#fff;padding:5px 8px;text-align:left">Patrimônios</th>'+
+        '<th style="background:#c00;color:#fff;padding:5px 8px;text-align:left">Detalhe</th>'+
       '</tr></thead><tbody>'+
       matsPend.map(function(mat,i){
+        var bg = i%2===0?'#fff':'#fff0f0';
+        if(isInsumo(mat.itemId)){
+          var qp = Math.max(0,(mat.qtdSaida||0)-(mat.qtdRetorno||0));
+          return '<tr style="background:'+bg+'">'+
+            '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+mat.nome+'</td>'+
+            '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;color:red;font-weight:bold">'+qp+'</td>'+
+            '<td style="padding:5px 8px;border-bottom:1px solid #ddd;font-size:11px;color:#aaa;font-style:italic">Sem patrimônio</td>'+
+          '</tr>';
+        }
         var s=mat.patsaida||[], r=mat.patRetorno||[];
         var pend=s.filter(function(p){return r.indexOf(p)<0;});
-        return '<tr style="background:'+(i%2===0?'#fff':'#fff0f0')+'">'+
+        return '<tr style="background:'+bg+'">'+
           '<td style="padding:5px 8px;border-bottom:1px solid #ddd">'+mat.nome+'</td>'+
           '<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;color:red;font-weight:bold">'+pend.length+'</td>'+
           '<td style="padding:5px 8px;border-bottom:1px solid #ddd;font-size:11px;color:#900">'+pend.join(', ')+'</td>'+
         '</tr>';
-      }).join('')+'</tbody></table></div>';
+      }).join('')+'</tbody></table></div></div>';
   }
 
   var statusLabel={saida:'SAÍDA',campo:'EM CAMPO',conferencia:'CONFERÊNCIA',concluido:'CONCLUÍDO'};
