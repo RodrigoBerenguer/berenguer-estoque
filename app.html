@@ -4192,8 +4192,8 @@ function renderPreview(evIdParam){
 
   container.innerHTML=
     // Botão imprimir — some na impressão
-    '<div style="margin-bottom:14px">'+
-      '<button onclick="copiarEvento()" id="btn-copiar" style="width:100%;padding:14px;background:var(--accent);color:#0d0f14;border:none;border-radius:10px;font-family:Rajdhani,sans-serif;font-weight:700;font-size:15px;letter-spacing:.5px;cursor:pointer">📋 COPIAR E COMPARTILHAR</button>'+
+    '<div style="margin-bottom:14px;display:flex;gap:10px" class="no-print">'+
+      '<button onclick="window.print()" style="flex:1;padding:14px;background:var(--accent);color:#0d0f14;border:none;border-radius:10px;font-family:Rajdhani,sans-serif;font-weight:700;font-size:15px;letter-spacing:.5px;cursor:pointer">🖨️ IMPRIMIR</button>'+
     '</div>'+
     // Documento
     '<div class="imp-doc" style="background:#fff;color:#000;padding:20px;border-radius:10px;border:1px solid var(--border);font-family:Arial,sans-serif">'+
