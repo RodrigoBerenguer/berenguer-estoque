@@ -4189,44 +4189,81 @@ function renderPreview(evIdParam){
   }
 
   var statusLabel={saida:'SAÍDA',campo:'EM CAMPO',conferencia:'CONFERÊNCIA',concluido:'CONCLUÍDO'};
+  var statusColor={saida:'#b8860b',campo:'#1a5090',conferencia:'#7a3090',concluido:'#1a6b47'};
+  var stColor = statusColor[ev.status]||'#333';
+
+  // ── Seção helper ────────────────────────────────────────────
+  function secTitle(n, label, color){
+    return '<div style="background:'+(color||'#1a1d27')+';color:#fff;padding:7px 12px;font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;margin:18px 0 0;border-radius:4px 4px 0 0">'+n+'. '+label+'</div>';
+  }
 
   container.innerHTML=
-    // Botão imprimir — some na impressão
-    '<div style="margin-bottom:14px;display:flex;gap:10px" class="no-print">'+
-      '<button onclick="window.print()" style="flex:1;padding:14px;background:var(--accent);color:#0d0f14;border:none;border-radius:10px;font-family:Rajdhani,sans-serif;font-weight:700;font-size:15px;letter-spacing:.5px;cursor:pointer">🖨️ IMPRIMIR</button>'+
+    // Botão imprimir
+    '<div style="margin-bottom:14px" class="no-print">'+
+      '<button onclick="window.print()" style="width:100%;padding:14px;background:#c9a227;color:#0d0f14;border:none;border-radius:10px;font-family:Rajdhani,sans-serif;font-weight:700;font-size:15px;letter-spacing:.5px;cursor:pointer">🖨️ IMPRIMIR DOCUMENTO</button>'+
     '</div>'+
-    // Documento
-    '<div class="imp-doc" style="background:#fff;color:#000;padding:20px;border-radius:10px;border:1px solid var(--border);font-family:Arial,sans-serif">'+
-      // Cabeçalho
-      '<div style="border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:14px">'+
-        '<div style="font-size:18px;font-weight:bold;letter-spacing:1px">BERENGUER — Controle de Estoque</div>'+
-        '<div style="font-size:11px;color:#444;margin-top:6px;line-height:1.8">'+
-          '<strong>Evento:</strong> '+ev.nome+' &nbsp;|&nbsp; '+
-          '<strong>Status:</strong> '+(statusLabel[ev.status]||ev.status)+' &nbsp;|&nbsp; '+
-          '<strong>Data:</strong> '+df+'<br>'+
-          (ev.responsavel?'<strong>Responsável:</strong> '+ev.responsavel+' &nbsp;|&nbsp; ':'')+
-          (ev.local?'<strong>Local:</strong> '+ev.local+' &nbsp;|&nbsp; ':'')+
-          (ev.transporte?'<strong>Transporte:</strong> '+ev.transporte:'')+'</div>'+
-        // Mini resumo no cabeçalho
-        '<div style="display:flex;gap:24px;margin-top:10px">'+
-          '<div style="font-size:11px"><strong style="font-size:18px;display:block">'+tot+'</strong>Enviados</div>'+
-          '<div style="font-size:11px"><strong style="font-size:18px;display:block;color:green">'+ret+'</strong>Voltaram</div>'+
-          '<div style="font-size:11px"><strong style="font-size:18px;display:block;color:'+(falt>0?'red':'green')+'">'+falt+'</strong>Pendentes</div>'+
-          '<div style="font-size:11px"><strong style="font-size:18px;display:block">'+pct+'%</strong>Retorno</div>'+
+
+    // ── Documento ─────────────────────────────────────────────
+    '<div class="imp-doc" style="background:#fff;color:#000;border-radius:10px;border:1px solid #ddd;font-family:Arial,sans-serif;overflow:hidden">'+
+
+      // Cabeçalho escuro estilo Berenguer
+      '<div style="background:#1a1d27;padding:16px 20px">'+
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">'+
+          '<div>'+
+            '<div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:4px">Controle de Estoque</div>'+
+            '<div style="font-size:20px;font-weight:bold;letter-spacing:1px;color:#fff">BERENGUER</div>'+
+          '</div>'+
+          '<div style="background:'+stColor+';color:#fff;font-size:10px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;padding:4px 10px;border-radius:4px;margin-top:4px">'+
+            (statusLabel[ev.status]||ev.status)+
+          '</div>'+
+        '</div>'+
+        // Info do evento
+        '<div style="background:rgba(255,255,255,.06);border-radius:6px;padding:10px 12px;font-size:11px;color:#ccc;line-height:2">'+
+          '<strong style="color:#c9a227">Evento:</strong> '+ev.nome+'<br>'+
+          '<strong style="color:#c9a227">Data:</strong> '+df+
+          (ev.local?' &nbsp;|&nbsp; <strong style="color:#c9a227">Local:</strong> '+ev.local:'')+
+          (ev.responsavel?'<br><strong style="color:#c9a227">Responsável:</strong> '+ev.responsavel:'')+
+          (ev.transporte?' &nbsp;|&nbsp; <strong style="color:#c9a227">Transporte:</strong> '+ev.transporte:'')+
+        '</div>'+
+        // Mini stats
+        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px">'+
+          '<div style="background:rgba(255,255,255,.06);border-radius:6px;padding:8px;text-align:center">'+
+            '<div style="font-size:22px;font-weight:bold;color:#c9a227">'+tot+'</div>'+
+            '<div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px">Enviados</div>'+
+          '</div>'+
+          '<div style="background:rgba(255,255,255,.06);border-radius:6px;padding:8px;text-align:center">'+
+            '<div style="font-size:22px;font-weight:bold;color:#2ecc8a">'+ret+'</div>'+
+            '<div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px">Voltaram</div>'+
+          '</div>'+
+          '<div style="background:rgba(255,255,255,.06);border-radius:6px;padding:8px;text-align:center">'+
+            '<div style="font-size:22px;font-weight:bold;color:'+(falt>0?'#ff4d6d':'#2ecc8a')+'">'+falt+'</div>'+
+            '<div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px">Pendentes</div>'+
+          '</div>'+
+          '<div style="background:rgba(255,255,255,.06);border-radius:6px;padding:8px;text-align:center">'+
+            '<div style="font-size:22px;font-weight:bold;color:#fff">'+pct+'%</div>'+
+            '<div style="font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px">Retorno</div>'+
+          '</div>'+
         '</div>'+
       '</div>'+
-      // Seções
-      '<div style="font-weight:bold;font-size:13px;text-transform:uppercase;letter-spacing:.5px;padding:4px 0;border-bottom:2px solid #000;margin-bottom:8px">1. Saída de Material</div>'+
-      tSaida+
-      '<div style="font-weight:bold;font-size:13px;text-transform:uppercase;letter-spacing:.5px;padding:4px 0;border-bottom:2px solid #000;margin:16px 0 8px">2. Conferência de Retorno</div>'+
-      tRetorno+
-      '<div style="font-weight:bold;font-size:13px;text-transform:uppercase;letter-spacing:.5px;padding:4px 0;border-bottom:2px solid #000;margin:16px 0 8px">3. Resumo Geral</div>'+
-      tResumo+
-      tPend+
-      // Rodapé
-      '<div style="margin-top:24px;padding-top:8px;border-top:1px solid #ccc;display:flex;justify-content:space-between;font-size:10px;color:#999">'+
-        '<span>Berenguer Controle de Estoque</span>'+
-        '<span>Gerado em '+new Date().toLocaleString('pt-BR')+'</span>'+
+
+      // Seções com tabelas
+      '<div style="padding:0 20px 20px">'+
+        secTitle(1,'Saída de Material')+
+        '<div style="border:1px solid #ddd;border-top:none;border-radius:0 0 4px 4px;overflow:hidden;margin-bottom:4px">'+tSaida+'</div>'+
+
+        secTitle(2,'Conferência de Retorno')+
+        '<div style="border:1px solid #ddd;border-top:none;border-radius:0 0 4px 4px;overflow:hidden;margin-bottom:4px">'+tRetorno+'</div>'+
+
+        secTitle(3,'Resumo Geral')+
+        '<div style="border:1px solid #ddd;border-top:none;border-radius:0 0 4px 4px;overflow:hidden;margin-bottom:4px">'+tResumo+'</div>'+
+
+        tPend+
+
+        // Rodapé
+        '<div style="margin-top:20px;padding-top:10px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:10px;color:#999">'+
+          '<span>Berenguer Engenharia — Controle de Estoque</span>'+
+          '<span>Gerado em '+new Date().toLocaleString('pt-BR')+'</span>'+
+        '</div>'+
       '</div>'+
     '</div>';
 }
