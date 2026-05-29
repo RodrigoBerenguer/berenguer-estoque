@@ -4059,7 +4059,18 @@ function imprimirPreview(){
   if(!area){ toast('Nada para imprimir','error'); return; }
   var w = window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Berenguer</title>'+
-    '<style>body{font-family:Arial,sans-serif;margin:10mm}@media print{body{margin:5mm}}</style>'+
+    '<style>'+
+    'body{font-family:Arial,sans-serif;margin:10mm;background:#fff;color:#000}'+
+    'table{border-collapse:collapse;width:100%}'+
+    'th,td{padding:5px 8px;font-size:12px}'+
+    '@media print{'+
+      'body{margin:5mm}'+
+      '[style*="background:#1a1d27"]{background:#1a1d27!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+      '[style*="background:rgba(255,255,255,.06)"]{background:rgba(255,255,255,.06)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+      '[style*="background:#111"]{background:#111!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+      '[style*="background:#e8e8e8"]{background:#e8e8e8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+    '}'+
+    '</style>'+
     '</head><body>'+area.innerHTML+'</body></html>');
   w.document.close();
   setTimeout(function(){ w.focus(); w.print(); }, 400);
@@ -4200,11 +4211,11 @@ function renderPreview(evIdParam){
   container.innerHTML=
     // Botão imprimir
     '<div style="margin-bottom:14px" class="no-print">'+
-      '<button onclick="window.print()" style="width:100%;padding:14px;background:#c9a227;color:#0d0f14;border:none;border-radius:10px;font-family:Rajdhani,sans-serif;font-weight:700;font-size:15px;letter-spacing:.5px;cursor:pointer">🖨️ IMPRIMIR DOCUMENTO</button>'+
+      '<button onclick="imprimirPreview()" style="width:100%;padding:14px;background:#c9a227;color:#0d0f14;border:none;border-radius:10px;font-family:Rajdhani,sans-serif;font-weight:700;font-size:15px;letter-spacing:.5px;cursor:pointer">🖨️ IMPRIMIR DOCUMENTO</button>'+
     '</div>'+
 
     // ── Documento ─────────────────────────────────────────────
-    '<div class="imp-doc" style="background:#fff;color:#000;border-radius:10px;border:1px solid #ddd;font-family:Arial,sans-serif;overflow:hidden">'+
+    '<div id="print-area" class="imp-doc" style="background:#fff;color:#000;border-radius:10px;border:1px solid #ddd;font-family:Arial,sans-serif;overflow:hidden">'+
 
       // Cabeçalho escuro estilo Berenguer
       '<div style="background:#1a1d27;padding:16px 20px">'+
